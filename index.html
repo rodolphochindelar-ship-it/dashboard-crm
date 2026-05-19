@@ -1185,6 +1185,7 @@
             date: parseDate(r[K.date]),
             canal: String(r[K.canal] || 'Outros Canais').trim(),
             origem: String(r[K.origem] || '').trim(),
+            midia: String(r[K.midia] || '').trim(),
             search_text: `${r[K.origem] || ''} ${r[K.campanha] || ''} ${r[K.midia] || ''}`.toLowerCase(),
             sessoes: parseNum(r[K.sessoes]),
             trans: parseNum(r[K.trans]),
@@ -1196,6 +1197,17 @@
           // Initialize comparativo dates
           document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
           document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+
+          const nonCrmMap = {};
+          rawData.forEach(r => {
+            if (!isCRM(r.canal) && r.midia) nonCrmMap[r.midia] = (nonCrmMap[r.midia] || 0) + r.receita;
+          });
+          const nonCrmOrigens = Object.keys(nonCrmMap).sort((a, b) => nonCrmMap[b] - nonCrmMap[a]);
+          const list = document.getElementById('ms-list');
+          if (list) {
+            list.innerHTML = nonCrmOrigens.map(o => '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(nonCrmMap[o]) + '</div></div></label>').join('');
+          }
+          document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
 
           updateAll();
           updateComparativo();
