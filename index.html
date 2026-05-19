@@ -659,6 +659,7 @@
       </div>
       <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2026-01-01" /></div>
       <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17" /></div>
+      <button type="button" class="cmp-btn" onclick="resetFilters()" style="align-self: flex-end; height: 36px;">Redefinir Filtros</button>
     </div>
 
     <!-- KPIs linha 1 -->
@@ -888,10 +889,16 @@
     function buildByDate(data) {
       const byDate = {};
       data.forEach(r => {
-        if (!byDate[r.date]) byDate[r.date] = { crm: 0, outros: 0, sesscrm: 0, sessoutros: 0, transcrm: 0, transoutros: 0 };
+        if (!byDate[r.date]) byDate[r.date] = { crm: 0, outros: 0, sesscrm: 0, sessoutros: 0, transcrm: 0, transoutros: 0, origens: {} };
         const d = byDate[r.date];
         if (isCRM(r.canal)) { d.crm += r.receita; d.sesscrm += r.sessoes; d.transcrm += r.trans; }
         else { d.outros += r.receita; d.sessoutros += r.sessoes; d.transoutros += r.trans; }
+        if (r.midia) {
+          if (!d.origens[r.midia]) d.origens[r.midia] = { rec: 0, sess: 0, trans: 0 };
+          d.origens[r.midia].rec += r.receita;
+          d.origens[r.midia].sess += r.sessoes;
+          d.origens[r.midia].trans += r.trans;
+        }
       });
       const dates = Object.keys(byDate).sort();
       return { byDate, dates };
@@ -985,41 +992,80 @@
       // --- Gráficos Visão Geral ---
       const { byDate, dates } = buildByDate(data);
       const palette = ['#a078f0', '#f07040', '#f0a030', '#40f0d0', '#f040a0', '#d040f0'];
-      function buildDatasets(dates, byDate, totalFn, crmFn, outFn, origFn) {
-        const ds = [
-          { label: 'Total', data: dates.map(d => totalFn(byDate[d])), borderColor: C.total, backgroundColor: 'transparent', tension: .3, pointRadius: 3, borderWidth: 2, hidden: true },
-          { label: 'CRM', data: dates.map(d => crmFn(byDate[d])), borderColor: C.crm, backgroundColor: C.crm + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2 },
-          { label: 'Outros (Todos)', data: dates.map(d => outFn(byDate[d])), borderColor: C.outros, backgroundColor: C.outros + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [5, 3] }
-        ];
+      
+      function buildDatasets(dates, byDate, crmFn, outFn, origFn) {
+        const ds = [];
         window.selectedOrigens.forEach((o, i) => {
-          ds.push({ label: o, data: dates.map(d => origFn(byDate[d], o)), borderColor: palette[i % palette.length], backgroundColor: 'transparent', tension: .3, pointRadius: 3, borderWidth: 1.5 });
+          if (o === 'CRM_TOTAL') {
+            ds.push({ label: 'CRM (Total)', data: dates.map(d => crmFn(byDate[d])), borderColor: C.crm, backgroundColor: C.crm + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2 });
+          } else if (o === 'OUTROS_TOTAL') {
+            ds.push({ label: 'Outros Canais', data: dates.map(d => outFn(byDate[d])), borderColor: C.outros, backgroundColor: C.outros + '18', fill: true, tension: .3, pointRadius: 3, borderWidth: 2, borderDash: [5, 3] });
+          } else {
+            ds.push({ label: o, data: dates.map(d => origFn(byDate[d], o)), borderColor: palette[i % palette.length], backgroundColor: 'transparent', tension: .3, pointRadius: 3, borderWidth: 1.5 });
+          }
         });
         return ds;
       }
+      
       function buildLegend() {
-        const l = [{ color: C.crm, label: 'CRM' }, { color: C.outros, label: 'Outros canais' }];
-        window.selectedOrigens.forEach((o, i) => l.push({ color: palette[i % palette.length], label: o }));
+        const l = [];
+        window.selectedOrigens.forEach((o, i) => {
+           if (o === 'CRM_TOTAL') l.push({ color: C.crm, label: 'CRM (Total)' });
+           else if (o === 'OUTROS_TOTAL') l.push({ color: C.outros, label: 'Outros Canais' });
+           else l.push({ color: palette[i % palette.length], label: o });
+        });
         return l;
       }
 
       dc('diario'); leg('leg-diario', buildLegend());
-      charts['diario'] = new Chart(document.getElementById('chart-diario'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm + x.outros), x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => Math.round(x.origens[o].rec)) }, options: lineOpts(v => fmtC(v)) });
-      // remove the rest of the ev- charts, and replace with new ones:
+      charts['diario'] = new Chart(document.getElementById('chart-diario'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => x.origens[o] ? Math.round(x.origens[o].rec) : 0) }, 
+        options: lineOpts(v => fmtC(v)) 
+      });
 
       dc('ev-receita'); leg('leg-ev-receita', buildLegend());
-      charts['ev-receita'] = new Chart(document.getElementById('chart-ev-receita'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm + x.outros), x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => Math.round(x.origens[o].rec)) }, options: lineOpts(v => fmtC(v)) });
+      charts['ev-receita'] = new Chart(document.getElementById('chart-ev-receita'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.crm), x => Math.round(x.outros), (x, o) => x.origens[o] ? Math.round(x.origens[o].rec) : 0) }, 
+        options: lineOpts(v => fmtC(v)) 
+      });
 
       dc('ev-conv'); leg('leg-ev-conv', buildLegend());
-      charts['ev-conv'] = new Chart(document.getElementById('chart-ev-conv'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => { const s = x.sesscrm + x.sessoutros; return s > 0 ? +((x.transcrm + x.transoutros) / s * 100).toFixed(2) : 0 }, x => x.sesscrm > 0 ? +(x.transcrm / x.sesscrm * 100).toFixed(2) : 0, x => x.sessoutros > 0 ? +(x.transoutros / x.sessoutros * 100).toFixed(2) : 0, (x, o) => x.origens[o].sess > 0 ? +(x.origens[o].trans / x.origens[o].sess * 100).toFixed(2) : 0) }, options: lineOpts(v => v.toFixed(1) + '%') });
+      charts['ev-conv'] = new Chart(document.getElementById('chart-ev-conv'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, 
+          x => x.sesscrm > 0 ? +(x.transcrm / x.sesscrm * 100).toFixed(2) : 0, 
+          x => x.sessoutros > 0 ? +(x.transoutros / x.sessoutros * 100).toFixed(2) : 0, 
+          (x, o) => (x.origens[o] && x.origens[o].sess > 0) ? +(x.origens[o].trans / x.origens[o].sess * 100).toFixed(2) : 0
+        ) }, 
+        options: lineOpts(v => v.toFixed(1) + '%') 
+      });
 
       dc('ev-share'); leg('leg-ev-share', buildLegend());
-      charts['ev-share'] = new Chart(document.getElementById('chart-ev-share'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => 100, x => { const t = x.crm + x.outros; return t > 0 ? +(x.crm / t * 100).toFixed(1) : 0 }, x => { const t = x.crm + x.outros; return t > 0 ? +(x.outros / t * 100).toFixed(1) : 0 }, (x, o) => { const t = x.crm + x.outros; return t > 0 ? +(x.origens[o].rec / t * 100).toFixed(1) : 0 }) }, options: { ...lineOpts(v => v.toFixed(1) + '%'), scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TF }, grid: { color: GRID } } } } });
+      charts['ev-share'] = new Chart(document.getElementById('chart-ev-share'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, 
+          x => { const t = x.crm + x.outros; return t > 0 ? +(x.crm / t * 100).toFixed(1) : 0 }, 
+          x => { const t = x.crm + x.outros; return t > 0 ? +(x.outros / t * 100).toFixed(1) : 0 }, 
+          (x, o) => { const t = x.crm + x.outros; return (t > 0 && x.origens[o]) ? +(x.origens[o].rec / t * 100).toFixed(1) : 0 }
+        ) }, 
+        options: { ...lineOpts(v => v.toFixed(1) + '%'), scales: { x: { ticks: { maxTicksLimit: 10, color: TICK, font: TF }, grid: { display: false } }, y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: TICK, font: TF }, grid: { color: GRID } } } } 
+      });
 
       dc('ev-sess'); leg('leg-ev-sess', buildLegend());
-      charts['ev-sess'] = new Chart(document.getElementById('chart-ev-sess'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.sesscrm + x.sessoutros), x => Math.round(x.sesscrm), x => Math.round(x.sessoutros), (x, o) => Math.round(x.origens[o].sess)) }, options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) });
+      charts['ev-sess'] = new Chart(document.getElementById('chart-ev-sess'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.sesscrm), x => Math.round(x.sessoutros), (x, o) => x.origens[o] ? Math.round(x.origens[o].sess) : 0) }, 
+        options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
+      });
 
       dc('ev-trans'); leg('leg-ev-trans', buildLegend());
-      charts['ev-trans'] = new Chart(document.getElementById('chart-ev-trans'), { type: 'line', data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.transcrm + x.transoutros), x => Math.round(x.transcrm), x => Math.round(x.transoutros), (x, o) => Math.round(x.origens[o].trans)) }, options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) });
+      charts['ev-trans'] = new Chart(document.getElementById('chart-ev-trans'), { 
+        type: 'line', 
+        data: { labels: dates, datasets: buildDatasets(dates, byDate, x => Math.round(x.transcrm), x => Math.round(x.transoutros), (x, o) => x.origens[o] ? Math.round(x.origens[o].trans) : 0) }, 
+        options: lineOpts(v => Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v)) 
+      });
 
     }
 
@@ -1132,6 +1178,21 @@
       updateComparativo();
     }
 
+    function resetFilters() {
+      document.getElementById('f-pdv').value = '';
+      document.getElementById('f-canal').value = '';
+      document.getElementById('f-cmp').value = 'none';
+      document.getElementById('f-inicio').value = '2026-01-01';
+      document.getElementById('f-fim').value = '2026-05-17';
+      document.querySelectorAll('#ms-list input').forEach(cb => {
+        cb.checked = cb.value === 'CRM_TOTAL' || cb.value === 'OUTROS_TOTAL';
+      });
+      document.getElementById('cmp-a-ini').value = '2026-01-01';
+      document.getElementById('cmp-a-fim').value = '2026-05-17';
+      updateAll();
+      updateComparativo();
+    }
+
     /* ── Eventos ── */
     ['f-pdv', 'f-canal', 'f-cmp'].forEach(id => {
       document.getElementById(id).addEventListener('change', updateAll);
@@ -1198,14 +1259,23 @@
           document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
           document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
 
-          const nonCrmMap = {};
+          const origensMap = {};
           rawData.forEach(r => {
-            if (!isCRM(r.canal) && r.midia) nonCrmMap[r.midia] = (nonCrmMap[r.midia] || 0) + r.receita;
+            if (r.midia) origensMap[r.midia] = (origensMap[r.midia] || 0) + r.receita;
           });
-          const nonCrmOrigens = Object.keys(nonCrmMap).sort((a, b) => nonCrmMap[b] - nonCrmMap[a]);
+          const origensValidas = Object.keys(origensMap).filter(o => origensMap[o] > 0).sort((a, b) => origensMap[b] - origensMap[a]);
           const list = document.getElementById('ms-list');
           if (list) {
-            list.innerHTML = nonCrmOrigens.map(o => '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(nonCrmMap[o]) + '</div></div></label>').join('');
+            let html = `
+              <div style="padding:8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-direction:column; position:sticky; top:0; background:var(--bg2); z-index:10;">
+                <button type="button" class="cmp-btn" onclick="document.querySelectorAll('#ms-list input').forEach(cb => cb.checked = false); updateAll();" style="width:100%; border-color:var(--border2);">Limpar Seleção</button>
+                <button type="button" class="cmp-btn" onclick="document.getElementById('ms-list').classList.remove('open');" style="width:100%; background:var(--accent); color:#000; border-color:var(--accent); font-weight:500;">OK / Fechar</button>
+              </div>
+            `;
+            html += '<label class="ms-item"><input type="checkbox" value="CRM_TOTAL" onchange="updateAll()" checked><div><div>CRM (Total)</div><div class="ms-summary">Visão consolidada</div></div></label>';
+            html += '<label class="ms-item"><input type="checkbox" value="OUTROS_TOTAL" onchange="updateAll()" checked><div><div>Outros Canais (Total)</div><div class="ms-summary">Visão consolidada</div></div></label>';
+            html += origensValidas.map(o => '<label class="ms-item"><input type="checkbox" value="' + o + '" onchange="updateAll()"><div><div>' + o + '</div><div class="ms-summary">Receita: ' + fmtR(origensMap[o]) + '</div></div></label>').join('');
+            list.innerHTML = html;
           }
           document.addEventListener('click', e => { if (!e.target.closest('.multi-select')) { const l = document.getElementById('ms-list'); if (l) l.classList.remove('open') } });
 
