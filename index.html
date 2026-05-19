@@ -249,6 +249,7 @@ const fmtC = n => 'R$'+Intl.NumberFormat('pt-BR',{notation:'compact',maximumFrac
 
 function isCRM(canal){ return String(canal).toUpperCase().startsWith('CRM'); }
 function isInsider(canal){ return String(canal).toLowerCase().includes('insider'); }
+// Origem Agrupada real: "CRM - Insider - App Push", "CRM - Insider - Email", etc.
 
 function getFiltered(){
   const pdv  = document.getElementById('f-pdv').value;
@@ -407,7 +408,7 @@ function loadData(){
         date:    findKey(sample, ['Data Ajustada','Data ajustada','Data']),
         canal:   findKey(sample, ['Origem Agrupada','Origem agrupada']),
         origem:  findKey(sample, ['Origem Resumida','Origem resumida']),
-        sessoes: findKey(sample, ['Sessões','Sessoes','SessÃµes','Sess\u00f5es','Sess\u00c3\u00b5es']),
+        sessoes: findKey(sample, ['SessÃµes','Sessões','Sessoes','Sessions']),
         trans:   findKey(sample, ['Transações','Transacoes','TransaÃ§Ãµes','Transa\u00e7\u00f5es']),
         receita: findKey(sample, ['Receita','receita'])
       };
