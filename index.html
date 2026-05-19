@@ -193,9 +193,8 @@
 </div>
 
 <script>
-const SHEET_ID = '1CtchLaWtQfjgrWx2xWlJ1vJFAT3dJYcKcfnqR0tqp38';
-const GID      = '690723887';
-const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+// ── URL pública da aba base_sessões (publicada na web via Arquivo > Publicar na web)
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2_eYvFcIeZVQstR_XUsfvw9dImLD4Kq6ev48iMYq5hZF_JQqi6P0GrJXESIg9FR3HNCcA6Jq9-T5A/pub?output=csv';
 
 const C = {
   crm:'#1fd196', outros:'#4b8ef5', site:'#a078f0', app:'#f07040', total:'#a078f0',
@@ -264,36 +263,30 @@ function updateAll(){
   const transTotal=dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
   const n=dates.length;
 
-  // Receita diária linha
   dc('diario'); leg('leg-diario',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:[
     {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:C.crm+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
     {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:C.outros+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
   ]},options:lineOpts(v=>fmtC(v))});
 
-  // Canal donut
   const canalMap={};data.forEach(r=>{canalMap[r.canal]=(canalMap[r.canal]||0)+r.receita;});
   const canais=Object.keys(canalMap).sort((a,b)=>canalMap[b]-canalMap[a]);
   dc('canal'); leg('leg-canal',canais.map((c,i)=>({color:i===0?C.crm:C.outros,label:c})));
   charts['canal']=new Chart(document.getElementById('chart-canal'),{type:'doughnut',data:{labels:canais,datasets:[{data:canais.map(c=>Math.round(canalMap[c])),backgroundColor:canais.map((_,i)=>i===0?C.crm:C.outros),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}}}});
 
-  // PDV donut
   const pdvMap={};data.forEach(r=>{pdvMap[r.pdv]=(pdvMap[r.pdv]||0)+r.sessoes;});
   const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[b]-pdvMap[a]);
   dc('pdv'); leg('leg-pdv',pdvs.map((p,i)=>({color:i===0?C.site:C.app,label:p})));
   charts['pdv']=new Chart(document.getElementById('chart-pdv'),{type:'doughnut',data:{labels:pdvs,datasets:[{data:pdvs.map(p=>Math.round(pdvMap[p])),backgroundColor:pdvs.map((_,i)=>i===0?C.site:C.app),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)+' sessões'}}}}});
 
-  // Top origens
   const origemMap={};data.forEach(r=>{origemMap[r.origem]=(origemMap[r.origem]||0)+r.receita;});
   const origens=Object.keys(origemMap).sort((a,b)=>origemMap[b]-origemMap[a]).slice(0,8);
   dc('origem');
   charts['origem']=new Chart(document.getElementById('chart-origem'),{type:'bar',data:{labels:origens,datasets:[{data:origens.map(o=>Math.round(origemMap[o])),backgroundColor:C.pal,borderWidth:0,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},scales:{x:{ticks:{callback:v=>fmtC(v),color:TICK,font:TF},grid:{color:GRID}},y:{ticks:{color:TICK,font:TF},grid:{display:false}}}}});
 
-  // Receita total linha
   dc('ev-receita');
   charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[{label:'Receita',data:totV,borderColor:C.total,backgroundColor:C.total+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>fmtC(v))});
 
-  // Conversão linha
   dc('ev-conv'); leg('leg-ev-conv',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['ev-conv']=new Chart(document.getElementById('chart-ev-conv'),{type:'line',data:{labels:dates,datasets:[
     {label:'Total',data:convTotal,borderColor:C.total,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
@@ -301,28 +294,24 @@ function updateAll(){
     {label:'Outros',data:convOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>v.toFixed(1)+'%')});
 
-  // Share linha
   dc('ev-share'); leg('leg-ev-share',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'bar',data:{labels:dates,datasets:[
     {label:'CRM',data:shareCRM,backgroundColor:C.crm,borderWidth:0,stack:'s'},
     {label:'Outros',data:shareOutros,backgroundColor:C.outros,borderWidth:0,stack:'s'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(1)+'%'}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
 
-  // Sessões linha
   dc('ev-sess'); leg('leg-ev-sess',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['ev-sess']=new Chart(document.getElementById('chart-ev-sess'),{type:'line',data:{labels:dates,datasets:[
     {label:'CRM',data:sessCRM,borderColor:C.crm,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
     {label:'Outros',data:sessOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 
-  // Transações linha
   dc('ev-trans'); leg('leg-ev-trans',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['ev-trans']=new Chart(document.getElementById('chart-ev-trans'),{type:'line',data:{labels:dates,datasets:[
     {label:'CRM',data:transCRM,borderColor:C.crm,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
     {label:'Outros',data:transOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 
-  // ── Barras horizontais por dia ──
   setHbarH('wrap-hbar-receita',n); dc('hbar-receita');
   charts['hbar-receita']=new Chart(document.getElementById('chart-hbar-receita'),{type:'bar',data:{labels:dates,datasets:[{data:totV,backgroundColor:C.receita+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>fmtC(v))});
 
@@ -345,15 +334,15 @@ function updateAll(){
 function loadData(){
   document.getElementById('status-txt').textContent='Carregando...';
   Papa.parse(CSV_URL,{
-    download:true,header:true,skipEmptyLines:true,
+    download:true, header:true, skipEmptyLines:true,
     complete:function(res){
       rawData=res.data.map(r=>({
-        pdv:r['Ponto de Venda']||'',
-        date:parseDate(r['Data Ajustada']||r['Data']),
-        canal:r['Origem Agrupada']||'Outros Canais',
-        origem:r['Origem Resumida']||r['Origem / mídia da sessão']||'',
+        pdv:    r['Ponto de Venda']||'',
+        date:   parseDate(r['Data Ajustada']||r['Data']),
+        canal:  r['Origem Agrupada']||'Outros Canais',
+        origem: r['Origem Resumida']||r['Origem / mídia da sessão']||'',
         sessoes:parseNum(r['Sessões']||r['Sess\u00f5es']),
-        trans:parseNum(r['Transações']||r['Transa\u00e7\u00f5es']),
+        trans:  parseNum(r['Transações']||r['Transa\u00e7\u00f5es']),
         receita:parseNum(r['Receita'])
       })).filter(r=>r.date);
       const ultimo=rawData.map(r=>r.date).sort().reverse()[0]||'';
