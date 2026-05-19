@@ -6,6 +6,7 @@
 <title>Dashboard CRM — Grupo Guanabara</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -43,6 +44,15 @@
   .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:12px;color:var(--text2)}
   .legend span{display:flex;align-items:center;gap:6px}
   .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+    .multi-select{position:relative}
+  .ms-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:7px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:220px;font-size:12px;font-family:var(--font)}
+  .ms-btn:hover{border-color:var(--accent)}
+  .ms-dropdown{position:absolute;top:100%;left:0;width:280px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-top:5px;max-height:300px;overflow-y:auto;z-index:200;display:none;box-shadow:0 5px 15px rgba(0,0,0,.5);padding:5px}
+  .ms-dropdown.open{display:block}
+  .ms-item{padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;border-radius:4px}
+  .ms-item:hover{background:rgba(255,255,255,.05)}
+  .ms-item input{cursor:pointer;accent-color:var(--accent)}
+  .ms-summary{font-size:10px;color:var(--text2);display:block;margin-top:2px}
   /* Comparativo */
   .cmp-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:12px}
   .cmp-panel>h3{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
@@ -290,6 +300,13 @@ function buildByDate(data){
 }
 
 function updateAll(){
+  Chart.register(ChartDataLabels);
+  window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb=>cb.value);
+  const msLabel=document.getElementById('ms-label');
+  if(window.selectedOrigens.length===0) msLabel.textContent='Nenhuma selecionada';
+  else if(window.selectedOrigens.length===1) msLabel.textContent=window.selectedOrigens[0].slice(0,20)+'...';
+  else msLabel.textContent=window.selectedOrigens.length+' selecionadas';
+
   const pdv=document.getElementById('f-pdv').value;
   const canal=document.getElementById('f-canal').value;
   const ini=document.getElementById('f-inicio').value;
@@ -369,77 +386,43 @@ function updateAll(){
 
   // --- Gráficos Visão Geral ---
   const{byDate,dates}=buildByDate(data);
-  const crmV=dates.map(d=>Math.round(byDate[d].crm));
-  const outrosV=dates.map(d=>Math.round(byDate[d].outros));
-  const totV=dates.map(d=>Math.round(byDate[d].crm+byDate[d].outros));
+  const palette=['#a078f0','#f07040','#f0a030','#40f0d0','#f040a0','#d040f0'];
+  function buildDatasets(dates, byDate, totalFn, crmFn, outFn, origFn) {
+    const ds = [
+      {label:'Total',data:dates.map(d=>totalFn(byDate[d])),borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:3,borderWidth:2,hidden:true},
+      {label:'CRM',data:dates.map(d=>crmFn(byDate[d])),borderColor:C.crm,backgroundColor:C.crm+'18',fill:true,tension:.3,pointRadius:3,borderWidth:2},
+      {label:'Outros (Todos)',data:dates.map(d=>outFn(byDate[d])),borderColor:C.outros,backgroundColor:C.outros+'18',fill:true,tension:.3,pointRadius:3,borderWidth:2,borderDash:[5,3]}
+    ];
+    window.selectedOrigens.forEach((o,i) => {
+      ds.push({label:o,data:dates.map(d=>origFn(byDate[d], o)),borderColor:palette[i%palette.length],backgroundColor:'transparent',tension:.3,pointRadius:3,borderWidth:1.5});
+    });
+    return ds;
+  }
+  function buildLegend() {
+    const l = [{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}];
+    window.selectedOrigens.forEach((o,i) => l.push({color:palette[i%palette.length],label:o}));
+    return l;
+  }
 
-  dc('diario');leg('leg-diario',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
-  charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:[
-    {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:C.crm+'18',fill:true,tension:.3,pointRadius:0,borderWidth:2},
-    {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:C.outros+'18',fill:true,tension:.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
-  ]},options:lineOpts(v=>fmtC(v))});
+  dc('diario');leg('leg-diario', buildLegend());
+  charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>Math.round(x.crm+x.outros),x=>Math.round(x.crm),x=>Math.round(x.outros),(x,o)=>Math.round(x.origens[o].rec))},options:lineOpts(v=>fmtC(v))});
+  // remove the rest of the ev- charts, and replace with new ones:
 
-  const canalMap={};data.forEach(r=>{const g=isCRM(r.canal)?'CRM':'Outros Canais';canalMap[g]=(canalMap[g]||0)+r.receita;});
-  const canais=Object.keys(canalMap).sort((a,b)=>canalMap[b]-canalMap[a]);
-  dc('canal');leg('leg-canal',canais.map((c,i)=>({color:i===0?C.crm:C.outros,label:c})));
-  charts['canal']=new Chart(document.getElementById('chart-canal'),{type:'doughnut',data:{labels:canais,datasets:[{data:canais.map(c=>Math.round(canalMap[c])),backgroundColor:canais.map((_,i)=>i===0?C.crm:C.outros),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}}}});
+  dc('ev-receita');leg('leg-ev-receita', buildLegend());
+  charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>Math.round(x.crm+x.outros),x=>Math.round(x.crm),x=>Math.round(x.outros),(x,o)=>Math.round(x.origens[o].rec))},options:lineOpts(v=>fmtC(v))});
 
-  const pdvMap={};data.forEach(r=>{pdvMap[r.pdv]=(pdvMap[r.pdv]||0)+r.sessoes;});
-  const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[b]-pdvMap[a]);
-  dc('pdv');leg('leg-pdv',pdvs.map((p,i)=>({color:i===0?C.site:C.app,label:p})));
-  charts['pdv']=new Chart(document.getElementById('chart-pdv'),{type:'doughnut',data:{labels:pdvs,datasets:[{data:pdvs.map(p=>Math.round(pdvMap[p])),backgroundColor:pdvs.map((_,i)=>i===0?C.site:C.app),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)+' sessões'}}}}});
+  dc('ev-conv');leg('leg-ev-conv', buildLegend());
+  charts['ev-conv']=new Chart(document.getElementById('chart-ev-conv'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>{const s=x.sesscrm+x.sessoutros;return s>0?+((x.transcrm+x.transoutros)/s*100).toFixed(2):0},x=>x.sesscrm>0?+(x.transcrm/x.sesscrm*100).toFixed(2):0,x=>x.sessoutros>0?+(x.transoutros/x.sessoutros*100).toFixed(2):0,(x,o)=>x.origens[o].sess>0?+(x.origens[o].trans/x.origens[o].sess*100).toFixed(2):0)},options:lineOpts(v=>v.toFixed(1)+'%')});
 
-  const origemMap={};data.forEach(r=>{origemMap[r.origem]=(origemMap[r.origem]||0)+r.receita;});
-  const origens=Object.keys(origemMap).sort((a,b)=>origemMap[b]-origemMap[a]).slice(0,8);
-  dc('origem');
-  charts['origem']=new Chart(document.getElementById('chart-origem'),{type:'bar',data:{labels:origens,datasets:[{data:origens.map(o=>Math.round(origemMap[o])),backgroundColor:C.pal,borderWidth:0,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},scales:{x:{ticks:{callback:v=>fmtC(v),color:TICK,font:TF},grid:{color:GRID}},y:{ticks:{color:TICK,font:TF},grid:{display:false}}}}});
+  dc('ev-share');leg('leg-ev-share', buildLegend());
+  charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>100,x=>{const t=x.crm+x.outros;return t>0?+(x.crm/t*100).toFixed(1):0},x=>{const t=x.crm+x.outros;return t>0?+(x.outros/t*100).toFixed(1):0},(x,o)=>{const t=x.crm+x.outros;return t>0?+(x.origens[o].rec/t*100).toFixed(1):0})},options:{...lineOpts(v=>v.toFixed(1)+'%'),scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
 
-  // --- Gráficos Evolução Diária (Linhas) ---
-  const convTotal=dates.map(d=>{const x=byDate[d];const s=x.sesscrm+x.sessoutros;return s>0?+((x.transcrm+x.transoutros)/s*100).toFixed(2):0});
-  const convCRM2=dates.map(d=>{const x=byDate[d];return x.sesscrm>0?+(x.transcrm/x.sesscrm*100).toFixed(2):0});
-  const convOut2=dates.map(d=>{const x=byDate[d];return x.sessoutros>0?+(x.transoutros/x.sessoutros*100).toFixed(2):0});
-  const shrCRM=dates.map(d=>{const x=byDate[d];const t=x.crm+x.outros;return t>0?+(x.crm/t*100).toFixed(1):0});
-  const shrOth=dates.map((_,i)=>+(100-shrCRM[i]).toFixed(1));
-  const sessCRM2=dates.map(d=>Math.round(byDate[d].sesscrm));
-  const sessOth2=dates.map(d=>Math.round(byDate[d].sessoutros));
-  const sessTotal=dates.map(d=>Math.round(byDate[d].sesscrm+byDate[d].sessoutros));
-  const tranCRM2=dates.map(d=>Math.round(byDate[d].transcrm));
-  const tranOth2=dates.map(d=>Math.round(byDate[d].transoutros));
-  const tranTotal=dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
+  dc('ev-sess');leg('leg-ev-sess', buildLegend());
+  charts['ev-sess']=new Chart(document.getElementById('chart-ev-sess'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>Math.round(x.sesscrm+x.sessoutros),x=>Math.round(x.sesscrm),x=>Math.round(x.sessoutros),(x,o)=>Math.round(x.origens[o].sess))},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 
-  dc('ev-receita');leg('leg-ev-receita',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
-  charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[
-    {label:'Total',data:totV,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
-    {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-  ]},options:lineOpts(v=>fmtC(v))});
-
-  dc('ev-conv');leg('leg-ev-conv',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
-  charts['ev-conv']=new Chart(document.getElementById('chart-ev-conv'),{type:'line',data:{labels:dates,datasets:[
-    {label:'Total',data:convTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'CRM',data:convCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
-    {label:'Outros',data:convOut2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-  ]},options:lineOpts(v=>v.toFixed(1)+'%')});
-
-  dc('ev-share');leg('leg-ev-share',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
-  charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'line',data:{labels:dates,datasets:[
-    {label:'CRM',data:shrCRM,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'Outros',data:shrOth,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
-  ]},options:{...lineOpts(v=>v.toFixed(1)+'%'),scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
-
-  dc('ev-sess');leg('leg-ev-sess',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
-  charts['ev-sess']=new Chart(document.getElementById('chart-ev-sess'),{type:'line',data:{labels:dates,datasets:[
-    {label:'Total',data:sessTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'CRM',data:sessCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
-    {label:'Outros',data:sessOth2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-  ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
-
-  dc('ev-trans');leg('leg-ev-trans',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
-  charts['ev-trans']=new Chart(document.getElementById('chart-ev-trans'),{type:'line',data:{labels:dates,datasets:[
-    {label:'Total',data:tranTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'CRM',data:tranCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
-    {label:'Outros',data:tranOth2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-  ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+  dc('ev-trans');leg('leg-ev-trans', buildLegend());
+  charts['ev-trans']=new Chart(document.getElementById('chart-ev-trans'),{type:'line',data:{labels:dates,datasets:buildDatasets(dates,byDate,x=>Math.round(x.transcrm+x.transoutros),x=>Math.round(x.transcrm),x=>Math.round(x.transoutros),(x,o)=>Math.round(x.origens[o].trans))},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+  
 }
 
 /* ── Comparativo ── */
