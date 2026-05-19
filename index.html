@@ -105,10 +105,10 @@
   </div>
 
   <!-- KPIs linha 1 -->
-  <p class="section-title">Visão geral — CRM</p>
+  <p class="section-title">Visão geral — KPIs Globais</p>
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label" id="lbl-kpi-rec">Receita CRM</div><div class="kpi-value" id="k-receita-crm">—</div></div>
-    <div class="kpi"><div class="kpi-label" id="lbl-kpi-share">Share CRM</div><div class="kpi-value" id="k-share-crm">—</div></div>
+    <div class="kpi"><div class="kpi-label" id="lbl-kpi-rec">Receita Total</div><div class="kpi-value" id="k-receita-crm">—</div></div>
+    <div class="kpi"><div class="kpi-label" id="lbl-kpi-share">Share %</div><div class="kpi-value" id="k-share-crm">—</div></div>
     <div class="kpi"><div class="kpi-label">Sessões</div><div class="kpi-value" id="k-sessoes">—</div></div>
     <div class="kpi"><div class="kpi-label">Transações</div><div class="kpi-value" id="k-trans">—</div></div>
     <div class="kpi"><div class="kpi-label">Conversão %</div><div class="kpi-value" id="k-conv">—</div></div>
@@ -243,7 +243,7 @@ function fmtC(v){if(v>=1e6)return'R$ '+Intl.NumberFormat('pt-BR',{minimumFractio
 function parseNum(s){if(!s&&s!==0)return 0;s=String(s).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(',')){if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'');}else if(s.includes(',')&&!s.includes('.')){s=s.replace(',','.');}return parseFloat(s)||0}
 function parseDate(d){if(!d)return null;const s=String(d).trim();if(s.includes('/')){const p=s.split('/');if(p.length===3){if(p[2].length===4)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;return`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`}}if(/^\d{8}$/.test(s))return`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;return s}
 function isCRM(canal){return String(canal).toUpperCase().startsWith('CRM')}
-function isInsider(r){return String(r.origem).toLowerCase().startsWith('insider /')}
+function isInsider(r){return String(r.origem).toLowerCase().includes('insider')}
 function delta(a,b){if(b===0)return null;return(a-b)/Math.abs(b)*100}
 
 function getFilteredBase(ini,fim,pdv){
@@ -341,8 +341,8 @@ function updateAll(){
     el.innerHTML=html;
   };
 
-  document.getElementById('lbl-kpi-rec').textContent=canal==='Outros Canais'?'Receita Outros':'Receita CRM';
-  document.getElementById('lbl-kpi-share').textContent=canal==='Outros Canais'?'Share Outros':'Share CRM';
+  document.getElementById('lbl-kpi-rec').textContent=canal==='Outros Canais'?'Receita Outros':(canal==='CRM'?'Receita CRM':'Receita Total');
+  document.getElementById('lbl-kpi-share').textContent=canal==='Outros Canais'?'Share Outros':(canal==='CRM'?'Share CRM':'Share %');
 
   setKpi('k-receita-crm',kpiA.rec,fmtR,'rec',kpiB);
   setKpi('k-share-crm',kpiA.share,v=>v.toFixed(2)+'%','share',kpiB);
