@@ -720,7 +720,7 @@
     </div>
     <div class="grid-2">
       <div class="card">
-        <h3>Receita por canal agrupado</h3>
+        <h3>Receita por origem selecionada</h3>
         <div class="legend" id="leg-canal"></div>
         <div style="position:relative;width:100%;height:200px"><canvas id="chart-canal"></canvas></div>
       </div>
@@ -1016,6 +1016,51 @@
         });
         return l;
       }
+
+      const oMap = {};
+      const pMap = { 'Site': 0, 'App': 0 };
+      data.forEach(r => {
+        if (r.midia) oMap[r.midia] = (oMap[r.midia] || 0) + r.receita;
+        if (r.pdv) pMap[r.pdv] = (pMap[r.pdv] || 0) + r.sessoes;
+      });
+
+      dc('canal'); leg('leg-canal', []); 
+      const selLabels = window.selectedOrigens.map(o => o === 'CRM_TOTAL' ? 'CRM (Total)' : (o === 'OUTROS_TOTAL' ? 'Outros Canais' : o));
+      const selColors = window.selectedOrigens.map((o, i) => o === 'CRM_TOTAL' ? C.crm : (o === 'OUTROS_TOTAL' ? C.outros : palette[i % palette.length]));
+      const selData = window.selectedOrigens.map(o => {
+        if (o === 'CRM_TOTAL') return data.filter(r => isCRM(r.canal)).reduce((a,r) => a+r.receita, 0);
+        if (o === 'OUTROS_TOTAL') return data.filter(r => !isCRM(r.canal)).reduce((a,r) => a+r.receita, 0);
+        return oMap[o] || 0;
+      });
+
+      charts['canal'] = new Chart(document.getElementById('chart-canal'), {
+        type: 'bar',
+        data: { labels: selLabels, datasets: [{ data: selData, backgroundColor: selColors, borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, datalabels: { color: '#f0f0ee', font: TFS, formatter: v => v > 0 ? fmtC(v) : '', anchor: 'end', align: 'top' } },
+          scales: { x: { ticks: { color: TICK, font: TFS }, grid: { display: false } }, y: { display: false, min: 0 } }
+        }
+      });
+
+      dc('pdv'); leg('leg-pdv', [{color: C.site, label: 'Site'}, {color: C.app, label: 'App'}]);
+      charts['pdv'] = new Chart(document.getElementById('chart-pdv'), {
+        type: 'doughnut',
+        data: { labels: ['Site', 'App'], datasets: [{ data: [pMap['Site'], pMap['App']], backgroundColor: [C.site, C.app], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: TFS, formatter: (v, ctx) => { let sum = ctx.dataset.data.reduce((a,b)=>a+b,0); return sum>0 ? (v/sum*100).toFixed(1)+'%' : ''; } } } }
+      });
+
+      const topOrigens = Object.keys(oMap).sort((a,b) => oMap[b] - oMap[a]).slice(0, 8);
+      dc('origem');
+      charts['origem'] = new Chart(document.getElementById('chart-origem'), {
+        type: 'bar',
+        data: { labels: topOrigens, datasets: [{ data: topOrigens.map(o => oMap[o]), backgroundColor: topOrigens.map((_, i) => palette[i % palette.length]), borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          plugins: { legend: { display: false }, datalabels: { color: '#f0f0ee', font: TFS, formatter: v => v > 0 ? fmtC(v) : '', anchor: 'end', align: 'right' } },
+          scales: { x: { display: false, min: 0 }, y: { ticks: { color: TICK, font: TFS }, grid: { display: false } } }
+        }
+      });
 
       dc('diario'); leg('leg-diario', buildLegend());
       charts['diario'] = new Chart(document.getElementById('chart-diario'), { 
