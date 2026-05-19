@@ -243,7 +243,8 @@ function fmtC(v){if(v>=1e6)return'R$ '+Intl.NumberFormat('pt-BR',{minimumFractio
 function parseNum(s){if(!s&&s!==0)return 0;s=String(s).trim().replace(/\s/g,'');if(s.includes('.')&&s.includes(',')){if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'');}else if(s.includes(',')&&!s.includes('.')){s=s.replace(',','.');}return parseFloat(s)||0}
 function parseDate(d){if(!d)return null;const s=String(d).trim();if(s.includes('/')){const p=s.split('/');if(p.length===3){if(p[2].length===4)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;return`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`}}if(/^\d{8}$/.test(s))return`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;return s}
 function isCRM(canal){return String(canal).toUpperCase().startsWith('CRM')}
-function isInsider(r){return String(r.origem).toLowerCase().includes('insider')}
+function isInsider(r){return String(r.search_text).toLowerCase().includes('insider')}
+function delta(a,b){if(b===0)return null;return(a-b)/Math.abs(b)*100}
 function delta(a,b){if(b===0)return null;return(a-b)/Math.abs(b)*100}
 
 function getFilteredBase(ini,fim,pdv){
@@ -591,6 +592,8 @@ function loadData(){
         date:findKey(sample,['Data Ajustada','Data ajustada','Data']),
         canal:findKey(sample,['Origem Agrupada','Origem agrupada']),
         origem:findKey(sample,['Origem Resumida','Origem resumida']),
+        campanha:findKey(sample,['Campanha da sessão','Campanha','Campaign']),
+        midia:findKey(sample,['Origem / mídia da sessão','Origem / midia','Source / Medium']),
         sessoes:findKey(sample,['SessÃµes','Sessões','Sessoes','Sessions']),
         trans:findKey(sample,['Transações','Transacoes','TransaÃ§Ãµes','Transa\u00e7\u00f5es']),
         receita:findKey(sample,['Receita','receita'])
@@ -600,6 +603,7 @@ function loadData(){
         date:parseDate(r[K.date]),
         canal:String(r[K.canal]||'Outros Canais').trim(),
         origem:String(r[K.origem]||'').trim(),
+        search_text: `${r[K.origem]||''} ${r[K.campanha]||''} ${r[K.midia]||''}`.toLowerCase(),
         sessoes:parseNum(r[K.sessoes]),
         trans:parseNum(r[K.trans]),
         receita:parseNum(r[K.receita])
