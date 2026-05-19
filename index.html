@@ -110,6 +110,14 @@
       <select id="f-cmp"><option value="none">Sem comparativo</option><option value="mom">MoM — Mês anterior</option><option value="yoy">YoY — Ano anterior</option></select>
     </div>
     <div class="filter-sep"></div>
+    <div class="filter-group multi-select" id="fg-origens">
+      <label>Comparar Origens</label>
+      <div class="ms-btn" onclick="document.getElementById('ms-list').classList.toggle('open')">
+        <span id="ms-label">Nenhuma selecionada</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="ms-dropdown" id="ms-list"></div>
+    </div>
     <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2026-01-01"/></div>
     <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17"/></div>
   </div>
