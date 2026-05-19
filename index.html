@@ -631,13 +631,6 @@
           <option value="App">App</option>
         </select>
       </div>
-      <div class="filter-group"><label>Canal agrupado</label>
-        <select id="f-canal">
-          <option value="">Todos</option>
-          <option value="CRM">CRM</option>
-          <option value="Outros Canais">Outros Canais</option>
-        </select>
-      </div>
       <div class="filter-group"><label>Comparar com</label>
         <select id="f-cmp">
           <option value="none">Sem comparativo</option>
@@ -913,17 +906,12 @@
       else msLabel.textContent = window.selectedOrigens.length + ' selecionadas';
 
       const pdv = document.getElementById('f-pdv').value;
-      const canal = document.getElementById('f-canal').value;
       const ini = document.getElementById('f-inicio').value;
       const fim = document.getElementById('f-fim').value;
       const cmp = document.getElementById('f-cmp').value;
 
       const dataBase = getFilteredBase(ini, fim, pdv);
-      const data = dataBase.filter(r => {
-        if (canal === 'CRM' && !isCRM(r.canal)) return false;
-        if (canal === 'Outros Canais' && isCRM(r.canal)) return false;
-        return true;
-      });
+      const data = dataBase;
 
       const calcKPIs = (dbase, dfilt) => {
         const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
@@ -942,11 +930,7 @@
         const bDates = getPeriodB_Dates(ini, fim, cmp);
         if (bDates) {
           const dataBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv);
-          dataB = dataBaseB.filter(r => {
-            if (canal === 'CRM' && !isCRM(r.canal)) return false;
-            if (canal === 'Outros Canais' && isCRM(r.canal)) return false;
-            return true;
-          });
+          dataB = dataBaseB;
           kpiB = calcKPIs(dataBaseB, dataB);
         }
       }
@@ -964,8 +948,8 @@
         el.innerHTML = html;
       };
 
-      document.getElementById('lbl-kpi-rec').textContent = canal === 'Outros Canais' ? 'Receita Outros' : (canal === 'CRM' ? 'Receita CRM' : 'Receita Total');
-      document.getElementById('lbl-kpi-share').textContent = canal === 'Outros Canais' ? 'Share Outros' : (canal === 'CRM' ? 'Share CRM' : 'Share %');
+      document.getElementById('lbl-kpi-rec').textContent = 'Receita Total';
+      document.getElementById('lbl-kpi-share').textContent = 'Share %';
 
       setKpi('k-receita-crm', kpiA.rec, fmtR, 'rec', kpiB);
       setKpi('k-share-crm', kpiA.share, v => v.toFixed(2) + '%', 'share', kpiB);
@@ -1225,7 +1209,6 @@
 
     function resetFilters() {
       document.getElementById('f-pdv').value = '';
-      document.getElementById('f-canal').value = '';
       document.getElementById('f-cmp').value = 'none';
       document.getElementById('f-inicio').value = '2026-01-01';
       document.getElementById('f-fim').value = '2026-05-17';
@@ -1239,7 +1222,7 @@
     }
 
     /* ── Eventos ── */
-    ['f-pdv', 'f-canal', 'f-cmp'].forEach(id => {
+    ['f-pdv', 'f-cmp'].forEach(id => {
       document.getElementById(id).addEventListener('change', updateAll);
     });
 
