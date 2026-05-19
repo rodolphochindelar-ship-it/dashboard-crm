@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard CRM — Grupo Guanabara</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0e0f11;
+    --bg2:     #16181c;
+    --bg3:     #1e2126;
+    --border:  rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text:    #f0f0ee;
+    --text2:   #8a8e96;
+    --text3:   #555960;
+    --crm:     #1fd196;
+    --outros:  #4b8ef5;
+    --site:    #a078f0;
+    --app:     #f07040;
+    --accent:  #1fd196;
+    --radius:  10px; --radius-lg: 14px;
+    --font:    'DM Sans', sans-serif;
+    --mono:    'DM Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding: 0 0 4rem; }
+
+  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 14px; color: #0e0f11; }
+  .header-title { font-size: 15px; font-weight: 500; }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .status-badge { font-size: 11px; font-family: var(--mono); background: rgba(31,209,150,0.1); color: var(--accent); border: 1px solid rgba(31,209,150,0.25); border-radius: 20px; padding: 4px 12px; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 0; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 2rem; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; }
+  .filter-group label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+  .filters select, .filters input[type="date"] { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 10px; border-radius: 7px; height: 36px; outline: none; cursor: pointer; transition: border-color 0.15s; }
+  .filters select:hover, .filters input:hover { border-color: rgba(255,255,255,0.25); }
+  .filters select:focus, .filters input:focus { border-color: var(--accent); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .kpi:hover { border-color: var(--border2); }
+  .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent); opacity:0.6; }
+  .kpi-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 300; color: var(--text); font-family: var(--mono); letter-spacing: -1px; }
+
+  .section-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 12px; }
+  .card h3 { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 12px; color: var(--text2); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(3,1fr); } .grid-2 { grid-template-columns: 1fr; } .page { padding: 1rem; } .header { padding: 1rem; } }
+  @media (max-width: 600px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">GG</div>
+    <div>
+      <div class="header-title">Dashboard CRM</div>
+      <div class="header-sub">Grupo Guanabara · Sessões &amp; Receita</div>
+    </div>
+  </div>
+  <span class="status-badge" id="status-txt">Carregando...</span>
+</header>
+
+<div class="page">
+
+  <div class="filters">
+    <div class="filter-group"><label>Ponto de venda</label><select id="f-pdv"><option value="">Todos</option><option value="Site">Site</option><option value="App">App</option></select></div>
+    <div class="filter-group"><label>Canal agrupado</label><select id="f-canal"><option value="">Todos</option><option value="CRM">CRM</option><option value="Outros Canais">Outros Canais</option></select></div>
+    <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2026-01-01" /></div>
+    <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17" /></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Receita total</div><div class="kpi-value" id="k-receita">—</div></div>
+    <div class="kpi"><div class="kpi-label">Sessões</div><div class="kpi-value" id="k-sessoes">—</div></div>
+    <div class="kpi"><div class="kpi-label">Transações</div><div class="kpi-value" id="k-trans">—</div></div>
+    <div class="kpi"><div class="kpi-label">Conversão</div><div class="kpi-value" id="k-conv">—</div></div>
+    <div class="kpi"><div class="kpi-label">Ticket médio</div><div class="kpi-value" id="k-ticket">—</div></div>
+  </div>
+
+  <p class="section-title">Visão geral</p>
+
+  <div class="card">
+    <h3>Receita diária</h3>
+    <div class="legend" id="leg-diario"></div>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="chart-diario"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Receita por canal agrupado</h3>
+      <div class="legend" id="leg-canal"></div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="chart-canal"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Sessões por ponto de venda</h3>
+      <div class="legend" id="leg-pdv"></div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="chart-pdv"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Top 8 origens por receita</h3>
+    <div style="position:relative;width:100%;height:280px;"><canvas id="chart-origem"></canvas></div>
+  </div>
+
+  <p class="section-title">Evolução diária — linhas</p>
+
+  <div class="card">
+    <h3>Receita diária total</h3>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="chart-ev-receita"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Taxa de conversão diária (%)</h3>
+    <div class="legend" id="leg-ev-conv"></div>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="chart-ev-conv"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Share de receita diário — CRM vs Outros canais (%)</h3>
+    <div class="legend" id="leg-ev-share"></div>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="chart-ev-share"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Sessões diárias</h3>
+      <div class="legend" id="leg-ev-sess"></div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="chart-ev-sess"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Transações diárias</h3>
+      <div class="legend" id="leg-ev-trans"></div>
+      <div style="position:relative;width:100%;height:200px;"><canvas id="chart-ev-trans"></canvas></div>
+    </div>
+  </div>
+
+  <p class="section-title">Evolução diária — barras horizontais por dia</p>
+
+  <div class="card">
+    <h3>Receita por dia (R$)</h3>
+    <div style="position:relative;width:100%;" id="wrap-hbar-receita"><canvas id="chart-hbar-receita"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Taxa de conversão por dia (%)</h3>
+    <div style="position:relative;width:100%;" id="wrap-hbar-conv"><canvas id="chart-hbar-conv"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Share de receita CRM por dia (%)</h3>
+    <div style="position:relative;width:100%;" id="wrap-hbar-share"><canvas id="chart-hbar-share"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Sessões por dia</h3>
+    <div style="position:relative;width:100%;" id="wrap-hbar-sess"><canvas id="chart-hbar-sess"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>Transações por dia</h3>
+    <div style="position:relative;width:100%;" id="wrap-hbar-trans"><canvas id="chart-hbar-trans"></canvas></div>
+  </div>
+
+  <div class="footer">Atualizado automaticamente a partir do Google Sheets · Grupo Guanabara</div>
+
+</div>
+
+<script>
+const SHEET_ID = '1CtchLaWtQfjgrWx2xWlJ1vJFAT3dJYcKcfnqR0tqp38';
+const GID      = '690723887';
+const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+const C = {
+  crm:'#1fd196', outros:'#4b8ef5', site:'#a078f0', app:'#f07040', total:'#a078f0',
+  receita:'#1fd196', conv:'#f0a030', share:'#a060e0', sess:'#4b8ef5', trans:'#f07040',
+  pal:['#a078f0','#1fd196','#4b8ef5','#f07040','#f0c040','#f06090','#70c040','#8090a0']
+};
+const GRID='rgba(255,255,255,0.06)', TICK='#555960';
+const TF={ size:11, family:"'DM Mono',monospace" };
+const TFS={ size:10, family:"'DM Mono',monospace" };
+
+let rawData=[], charts={};
+
+function parseNum(v){ if(!v||v==='')return 0; return parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0; }
+function parseDate(d){
+  if(!d)return null; const s=String(d).trim();
+  if(s.includes('/')){ const[dd,mm,yyyy]=s.split('/'); return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`; }
+  if(s.length===8)return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  return s;
+}
+const fmt=n=>new Intl.NumberFormat('pt-BR').format(Math.round(n));
+const fmtR=n=>'R$ '+new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(Math.round(n));
+const fmtC=n=>'R$'+Intl.NumberFormat('pt-BR',{notation:'compact',maximumFractionDigits:1}).format(n);
+
+function getFiltered(){
+  const pdv=document.getElementById('f-pdv').value, canal=document.getElementById('f-canal').value;
+  const ini=document.getElementById('f-inicio').value, fim=document.getElementById('f-fim').value;
+  return rawData.filter(r=>{
+    if(pdv&&r.pdv!==pdv)return false; if(canal&&r.canal!==canal)return false;
+    if(ini&&r.date<ini)return false; if(fim&&r.date>fim)return false; return true;
+  });
+}
+function dc(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+function leg(id,items){ const el=document.getElementById(id); if(!el)return; el.innerHTML=items.map(i=>`<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join(''); }
+function lineOpts(yFmt){ return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{ticks:{callback:yFmt||(v=>v),color:TICK,font:TF},grid:{color:GRID}}}}; }
+function setHbarH(wId,n){ const w=document.getElementById(wId); if(w)w.style.height=Math.max(200,n*22+40)+'px'; }
+function hbarOpts(xFmt){ return{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>xFmt?xFmt(ctx.raw):ctx.raw}}},scales:{x:{ticks:{callback:xFmt||(v=>v),color:TICK,font:TFS},grid:{color:GRID}},y:{ticks:{color:TICK,font:TFS},grid:{display:false}}}}; }
+
+function updateAll(){
+  const data=getFiltered();
+  const totR=data.reduce((a,r)=>a+r.receita,0), totS=data.reduce((a,r)=>a+r.sessoes,0), totT=data.reduce((a,r)=>a+r.trans,0);
+  document.getElementById('k-receita').textContent=fmtR(totR);
+  document.getElementById('k-sessoes').textContent=fmt(totS);
+  document.getElementById('k-trans').textContent=fmt(totT);
+  document.getElementById('k-conv').textContent=totS>0?(totT/totS*100).toFixed(2)+'%':'—';
+  document.getElementById('k-ticket').textContent=totT>0?fmtR(totR/totT):'—';
+
+  const byDate={};
+  data.forEach(r=>{
+    if(!byDate[r.date])byDate[r.date]={crm:0,outros:0,sesscrm:0,sessoutros:0,transcrm:0,transoutros:0};
+    const d=byDate[r.date];
+    if(r.canal==='CRM'){d.crm+=r.receita;d.sesscrm+=r.sessoes;d.transcrm+=r.trans;}
+    else{d.outros+=r.receita;d.sessoutros+=r.sessoes;d.transoutros+=r.trans;}
+  });
+  const dates=Object.keys(byDate).sort();
+  const crmV=dates.map(d=>Math.round(byDate[d].crm));
+  const outrosV=dates.map(d=>Math.round(byDate[d].outros));
+  const totV=dates.map(d=>Math.round(byDate[d].crm+byDate[d].outros));
+  const convTotal=dates.map(d=>{const x=byDate[d];const s=x.sesscrm+x.sessoutros;return s>0?parseFloat(((x.transcrm+x.transoutros)/s*100).toFixed(2)):0;});
+  const convCRM=dates.map(d=>{const x=byDate[d];return x.sesscrm>0?parseFloat((x.transcrm/x.sesscrm*100).toFixed(2)):0;});
+  const convOutros=dates.map(d=>{const x=byDate[d];return x.sessoutros>0?parseFloat((x.transoutros/x.sessoutros*100).toFixed(2)):0;});
+  const shareCRM=dates.map(d=>{const x=byDate[d];const t=x.crm+x.outros;return t>0?parseFloat((x.crm/t*100).toFixed(1)):0;});
+  const shareOutros=dates.map((_,i)=>parseFloat((100-shareCRM[i]).toFixed(1)));
+  const sessCRM=dates.map(d=>Math.round(byDate[d].sesscrm)), sessOutros=dates.map(d=>Math.round(byDate[d].sessoutros));
+  const sessTotal=dates.map(d=>Math.round(byDate[d].sesscrm+byDate[d].sessoutros));
+  const transCRM=dates.map(d=>Math.round(byDate[d].transcrm)), transOutros=dates.map(d=>Math.round(byDate[d].transoutros));
+  const transTotal=dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
+  const n=dates.length;
+
+  // Receita diária linha
+  dc('diario'); leg('leg-diario',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
+  charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:[
+    {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:C.crm+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
+    {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:C.outros+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
+  ]},options:lineOpts(v=>fmtC(v))});
+
+  // Canal donut
+  const canalMap={};data.forEach(r=>{canalMap[r.canal]=(canalMap[r.canal]||0)+r.receita;});
+  const canais=Object.keys(canalMap).sort((a,b)=>canalMap[b]-canalMap[a]);
+  dc('canal'); leg('leg-canal',canais.map((c,i)=>({color:i===0?C.crm:C.outros,label:c})));
+  charts['canal']=new Chart(document.getElementById('chart-canal'),{type:'doughnut',data:{labels:canais,datasets:[{data:canais.map(c=>Math.round(canalMap[c])),backgroundColor:canais.map((_,i)=>i===0?C.crm:C.outros),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}}}});
+
+  // PDV donut
+  const pdvMap={};data.forEach(r=>{pdvMap[r.pdv]=(pdvMap[r.pdv]||0)+r.sessoes;});
+  const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[b]-pdvMap[a]);
+  dc('pdv'); leg('leg-pdv',pdvs.map((p,i)=>({color:i===0?C.site:C.app,label:p})));
+  charts['pdv']=new Chart(document.getElementById('chart-pdv'),{type:'doughnut',data:{labels:pdvs,datasets:[{data:pdvs.map(p=>Math.round(pdvMap[p])),backgroundColor:pdvs.map((_,i)=>i===0?C.site:C.app),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)+' sessões'}}}}});
+
+  // Top origens
+  const origemMap={};data.forEach(r=>{origemMap[r.origem]=(origemMap[r.origem]||0)+r.receita;});
+  const origens=Object.keys(origemMap).sort((a,b)=>origemMap[b]-origemMap[a]).slice(0,8);
+  dc('origem');
+  charts['origem']=new Chart(document.getElementById('chart-origem'),{type:'bar',data:{labels:origens,datasets:[{data:origens.map(o=>Math.round(origemMap[o])),backgroundColor:C.pal,borderWidth:0,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},scales:{x:{ticks:{callback:v=>fmtC(v),color:TICK,font:TF},grid:{color:GRID}},y:{ticks:{color:TICK,font:TF},grid:{display:false}}}}});
+
+  // Receita total linha
+  dc('ev-receita');
+  charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[{label:'Receita',data:totV,borderColor:C.total,backgroundColor:C.total+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>fmtC(v))});
+
+  // Conversão linha
+  dc('ev-conv'); leg('leg-ev-conv',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
+  charts['ev-conv']=new Chart(document.getElementById('chart-ev-conv'),{type:'line',data:{labels:dates,datasets:[
+    {label:'Total',data:convTotal,borderColor:C.total,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
+    {label:'CRM',data:convCRM,borderColor:C.crm,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
+    {label:'Outros',data:convOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
+  ]},options:lineOpts(v=>v.toFixed(1)+'%')});
+
+  // Share linha
+  dc('ev-share'); leg('leg-ev-share',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
+  charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'bar',data:{labels:dates,datasets:[
+    {label:'CRM',data:shareCRM,backgroundColor:C.crm,borderWidth:0,stack:'s'},
+    {label:'Outros',data:shareOutros,backgroundColor:C.outros,borderWidth:0,stack:'s'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(1)+'%'}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
+
+  // Sessões linha
+  dc('ev-sess'); leg('leg-ev-sess',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
+  charts['ev-sess']=new Chart(document.getElementById('chart-ev-sess'),{type:'line',data:{labels:dates,datasets:[
+    {label:'CRM',data:sessCRM,borderColor:C.crm,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
+    {label:'Outros',data:sessOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
+  ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+
+  // Transações linha
+  dc('ev-trans'); leg('leg-ev-trans',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
+  charts['ev-trans']=new Chart(document.getElementById('chart-ev-trans'),{type:'line',data:{labels:dates,datasets:[
+    {label:'CRM',data:transCRM,borderColor:C.crm,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2},
+    {label:'Outros',data:transOutros,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
+  ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+
+  // ── Barras horizontais por dia ──
+  setHbarH('wrap-hbar-receita',n); dc('hbar-receita');
+  charts['hbar-receita']=new Chart(document.getElementById('chart-hbar-receita'),{type:'bar',data:{labels:dates,datasets:[{data:totV,backgroundColor:C.receita+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>fmtC(v))});
+
+  setHbarH('wrap-hbar-conv',n); dc('hbar-conv');
+  charts['hbar-conv']=new Chart(document.getElementById('chart-hbar-conv'),{type:'bar',data:{labels:dates,datasets:[{data:convTotal,backgroundColor:C.conv+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>v.toFixed(2)+'%')});
+
+  setHbarH('wrap-hbar-share',n); dc('hbar-share');
+  charts['hbar-share']=new Chart(document.getElementById('chart-hbar-share'),{type:'bar',
+    data:{labels:dates,datasets:[{data:shareCRM,backgroundColor:C.share+'bb',borderRadius:3,borderWidth:0}]},
+    options:{...hbarOpts(v=>v.toFixed(1)+'%'),scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TFS},grid:{color:GRID}},y:{ticks:{color:TICK,font:TFS},grid:{display:false}}}}
+  });
+
+  setHbarH('wrap-hbar-sess',n); dc('hbar-sess');
+  charts['hbar-sess']=new Chart(document.getElementById('chart-hbar-sess'),{type:'bar',data:{labels:dates,datasets:[{data:sessTotal,backgroundColor:C.sess+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+
+  setHbarH('wrap-hbar-trans',n); dc('hbar-trans');
+  charts['hbar-trans']=new Chart(document.getElementById('chart-hbar-trans'),{type:'bar',data:{labels:dates,datasets:[{data:transTotal,backgroundColor:C.trans+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
+}
+
+function loadData(){
+  document.getElementById('status-txt').textContent='Carregando...';
+  Papa.parse(CSV_URL,{
+    download:true,header:true,skipEmptyLines:true,
+    complete:function(res){
+      rawData=res.data.map(r=>({
+        pdv:r['Ponto de Venda']||'',
+        date:parseDate(r['Data Ajustada']||r['Data']),
+        canal:r['Origem Agrupada']||'Outros Canais',
+        origem:r['Origem Resumida']||r['Origem / mídia da sessão']||'',
+        sessoes:parseNum(r['Sessões']||r['Sess\u00f5es']),
+        trans:parseNum(r['Transações']||r['Transa\u00e7\u00f5es']),
+        receita:parseNum(r['Receita'])
+      })).filter(r=>r.date);
+      const ultimo=rawData.map(r=>r.date).sort().reverse()[0]||'';
+      document.getElementById('status-txt').textContent=fmt(rawData.length)+' linhas · último: '+(ultimo||'—');
+      updateAll();
+    },
+    error:()=>{ document.getElementById('status-txt').textContent='Erro ao carregar dados'; }
+  });
+}
+
+['f-pdv','f-canal','f-inicio','f-fim'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',updateAll);
+});
+
+loadData();
+</script>
+</body>
+</html>
