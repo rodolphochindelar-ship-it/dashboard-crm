@@ -10,68 +10,45 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:      #0e0f11;
-    --bg2:     #16181c;
-    --bg3:     #1e2126;
-    --border:  rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text:    #f0f0ee;
-    --text2:   #8a8e96;
-    --text3:   #555960;
-    --crm:     #1fd196;
-    --outros:  #4b8ef5;
-    --site:    #a078f0;
-    --app:     #f07040;
-    --accent:  #1fd196;
+    --bg:      #0e0f11; --bg2: #16181c; --bg3: #1e2126;
+    --border:  rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text:    #f0f0ee; --text2: #8a8e96; --text3: #555960;
+    --crm:     #1fd196; --outros: #4b8ef5; --site: #a078f0; --app: #f07040; --accent: #1fd196;
     --radius:  10px; --radius-lg: 14px;
-    --font:    'DM Sans', sans-serif;
-    --mono:    'DM Mono', monospace;
+    --font:    'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
   }
   body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; padding: 0 0 4rem; }
-
   .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .header-left { display: flex; align-items: center; gap: 14px; }
   .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 14px; color: #0e0f11; }
   .header-title { font-size: 15px; font-weight: 500; }
   .header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
   .status-badge { font-size: 11px; font-family: var(--mono); background: rgba(31,209,150,0.1); color: var(--accent); border: 1px solid rgba(31,209,150,0.25); border-radius: 20px; padding: 4px 12px; }
-
   .page { max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 0; }
-
   .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 2rem; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
   .filter-group { display: flex; flex-direction: column; gap: 5px; }
   .filter-group label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
   .filters select, .filters input[type="date"] { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 10px; border-radius: 7px; height: 36px; outline: none; cursor: pointer; transition: border-color 0.15s; }
   .filters select:hover, .filters input:hover { border-color: rgba(255,255,255,0.25); }
   .filters select:focus, .filters input:focus { border-color: var(--accent); }
-
-  .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 1rem; }
   .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; position: relative; overflow: hidden; transition: border-color 0.2s; }
   .kpi:hover { border-color: var(--border2); }
   .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent); opacity:0.6; }
   .kpi-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   .kpi-value { font-size: 24px; font-weight: 300; color: var(--text); font-family: var(--mono); letter-spacing: -1px; }
-  .kpi-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
-
   .section-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 10px; }
   .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
-
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 12px; }
   .card h3 { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 12px; color: var(--text2); }
   .legend span { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-
-  .debug-box { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; font-size: 11px; font-family: var(--mono); color: var(--text2); max-height: 200px; overflow-y: auto; display: none; }
-
   .footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
   @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(3,1fr); } .grid-2 { grid-template-columns: 1fr; } .page { padding: 1rem; } .header { padding: 1rem; } }
   @media (max-width: 600px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
 </style>
@@ -92,14 +69,15 @@
 <div class="page">
 
   <div class="filters">
-    <div class="filter-group"><label>Ponto de venda</label><select id="f-pdv"><option value="">Todos</option><option value="Site">Site</option><option value="App">App</option></select></div>
-    <div class="filter-group"><label>Canal agrupado</label><select id="f-canal"><option value="">Todos</option><option value="CRM">CRM</option><option value="Outros Canais">Outros Canais</option></select></div>
+    <div class="filter-group"><label>Ponto de venda</label>
+      <select id="f-pdv"><option value="">Todos</option><option value="Site">Site</option><option value="App">App</option></select>
+    </div>
+    <div class="filter-group"><label>Canal agrupado</label>
+      <select id="f-canal"><option value="">Todos</option><option value="CRM">CRM</option><option value="Outros Canais">Outros Canais</option></select>
+    </div>
     <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2026-01-01" /></div>
     <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17" /></div>
   </div>
-
-  <!-- Debug box — mostra cabeçalhos reais do CSV -->
-  <div class="debug-box" id="debug-box"></div>
 
   <!-- KPIs linha 1 -->
   <p class="section-title">Visão geral — CRM</p>
@@ -180,28 +158,19 @@
 
   <p class="section-title">Evolução diária — barras horizontais por dia</p>
 
-  <div class="card">
-    <h3>Receita por dia (R$)</h3>
+  <div class="card"><h3>Receita por dia (R$)</h3>
     <div style="position:relative;width:100%;" id="wrap-hbar-receita"><canvas id="chart-hbar-receita"></canvas></div>
   </div>
-
-  <div class="card">
-    <h3>Taxa de conversão por dia (%)</h3>
+  <div class="card"><h3>Taxa de conversão por dia (%)</h3>
     <div style="position:relative;width:100%;" id="wrap-hbar-conv"><canvas id="chart-hbar-conv"></canvas></div>
   </div>
-
-  <div class="card">
-    <h3>Share de receita CRM por dia (%)</h3>
+  <div class="card"><h3>Share de receita CRM por dia (%)</h3>
     <div style="position:relative;width:100%;" id="wrap-hbar-share"><canvas id="chart-hbar-share"></canvas></div>
   </div>
-
-  <div class="card">
-    <h3>Sessões por dia</h3>
+  <div class="card"><h3>Sessões por dia</h3>
     <div style="position:relative;width:100%;" id="wrap-hbar-sess"><canvas id="chart-hbar-sess"></canvas></div>
   </div>
-
-  <div class="card">
-    <h3>Transações por dia</h3>
+  <div class="card"><h3>Transações por dia</h3>
     <div style="position:relative;width:100%;" id="wrap-hbar-trans"><canvas id="chart-hbar-trans"></canvas></div>
   </div>
 
@@ -214,7 +183,6 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2_eYvFcIeZVQs
 const C = {
   crm:'#1fd196', outros:'#4b8ef5', site:'#a078f0', app:'#f07040', total:'#a078f0',
   receita:'#1fd196', conv:'#f0a030', share:'#a060e0', sess:'#4b8ef5', trans:'#f07040',
-  insider:'#f06090',
   pal:['#a078f0','#1fd196','#4b8ef5','#f07040','#f0c040','#f06090','#70c040','#8090a0']
 };
 const GRID='rgba(255,255,255,0.06)', TICK='#555960';
@@ -223,64 +191,64 @@ const TFS={ size:10, family:"'DM Mono',monospace" };
 
 let rawData=[], charts={};
 
-// Normaliza string para comparação (remove acentos, lowercase, trim)
-function norm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(); }
+// Encontra coluna mesmo com encoding quebrado — normaliza tudo para comparação
+function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
-function parseNum(v){
-  if(!v||v==='') return 0;
-  // Suporta formato BR (1.234,56) e EN (1234.56)
-  let s = String(v).trim().replace(/[^0-9,.-]/g,'');
-  if(s.includes(',') && s.includes('.')) {
-    // ex: 1.234,56 → remover ponto, trocar vírgula por ponto
-    if(s.lastIndexOf(',') > s.lastIndexOf('.')) { s = s.replace(/\./g,'').replace(',','.'); }
-    else { s = s.replace(/,/g,''); }
-  } else if(s.includes(',')) {
-    s = s.replace(',','.');
+function findKey(row, candidates){
+  const keys = Object.keys(row);
+  for(const c of candidates){
+    const nc = norm(c);
+    const found = keys.find(k => norm(k) === nc);
+    if(found !== undefined) return found;
   }
-  return parseFloat(s)||0;
+  // fallback: contains
+  for(const c of candidates){
+    const nc = norm(c);
+    const found = keys.find(k => norm(k).includes(nc));
+    if(found !== undefined) return found;
+  }
+  return null;
 }
 
+function parseNum(v){
+  if(!v || v==='') return 0;
+  let s = String(v).trim();
+  // Remove R$, espaços
+  s = s.replace(/[R$\s]/g,'');
+  // Formato BR: 1.234,56
+  if(s.includes(',') && s.includes('.')){
+    if(s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g,'').replace(',','.');
+    else s = s.replace(/,/g,'');
+  } else if(s.includes(',') && !s.includes('.')){
+    s = s.replace(',','.');
+  }
+  return parseFloat(s) || 0;
+}
+
+// Data Ajustada vem como DD/MM/YYYY; Data vem como YYYYMMDD
 function parseDate(d){
-  if(!d)return null;
-  const s=String(d).trim();
-  if(s.includes('/')){ const[dd,mm,yyyy]=s.split('/'); return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`; }
-  if(s.length===8) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
-  if(s.includes('-') && s.length===10) return s;
-  return s;
+  if(!d) return null;
+  const s = String(d).trim();
+  if(s.includes('/')){
+    const p = s.split('/');
+    if(p.length === 3){
+      // DD/MM/YYYY
+      if(p[2].length === 4) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+      // MM/DD/YYYY fallback
+      return `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+    }
+  }
+  if(s.length === 8 && !s.includes('-')) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  if(s.length === 10 && s[4]==='-') return s;
+  return null;
 }
 
 const fmt  = n => new Intl.NumberFormat('pt-BR').format(Math.round(n));
 const fmtR = n => 'R$ '+new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(Math.round(n));
 const fmtC = n => 'R$'+Intl.NumberFormat('pt-BR',{notation:'compact',maximumFractionDigits:1}).format(n);
 
-// Mapeamento flexível de colunas — tenta variações de nome
-function findCol(keys, candidates){
-  for(const c of candidates){
-    const found = keys.find(k => norm(k) === norm(c));
-    if(found) return found;
-  }
-  // fallback: contém
-  for(const c of candidates){
-    const found = keys.find(k => norm(k).includes(norm(c)));
-    if(found) return found;
-  }
-  return null;
-}
-
-function mapRow(r, colMap){
-  return {
-    pdv:    String(r[colMap.pdv]||'').trim(),
-    date:   parseDate(r[colMap.date]),
-    canal:  String(r[colMap.canal]||'Outros Canais').trim(),
-    origem: String(r[colMap.origem]||'').trim(),
-    sessoes:parseNum(r[colMap.sessoes]),
-    trans:  parseNum(r[colMap.trans]),
-    receita:parseNum(r[colMap.receita])
-  };
-}
-
-function isInsider(canal){ return norm(canal).includes('insider'); }
-function isCRM(canal){ return norm(canal).startsWith('crm'); }
+function isCRM(canal){ return String(canal).toUpperCase().startsWith('CRM'); }
+function isInsider(canal){ return String(canal).toLowerCase().includes('insider'); }
 
 function getFiltered(){
   const pdv  = document.getElementById('f-pdv').value;
@@ -288,11 +256,9 @@ function getFiltered(){
   const ini  = document.getElementById('f-inicio').value;
   const fim  = document.getElementById('f-fim').value;
   return rawData.filter(r=>{
-    if(pdv   && r.pdv  !== pdv)  return false;
-    if(canal){
-      if(canal==='CRM'          && !isCRM(r.canal))    return false;
-      if(canal==='Outros Canais' && isCRM(r.canal))    return false;
-    }
+    if(pdv && r.pdv !== pdv) return false;
+    if(canal === 'CRM'          && !isCRM(r.canal))  return false;
+    if(canal === 'Outros Canais' && isCRM(r.canal))  return false;
     if(ini && r.date < ini) return false;
     if(fim && r.date > fim) return false;
     return true;
@@ -301,48 +267,44 @@ function getFiltered(){
 
 function dc(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
 function leg(id,items){
-  const el=document.getElementById(id); if(!el)return;
+  const el=document.getElementById(id); if(!el) return;
   el.innerHTML=items.map(i=>`<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join('');
 }
 function lineOpts(yFmt){ return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{ticks:{callback:yFmt||(v=>v),color:TICK,font:TF},grid:{color:GRID}}}}; }
-function setHbarH(wId,n){ const w=document.getElementById(wId); if(w)w.style.height=Math.max(200,n*22+40)+'px'; }
+function setHbarH(wId,n){ const w=document.getElementById(wId); if(w) w.style.height=Math.max(200,n*22+40)+'px'; }
 function hbarOpts(xFmt){ return{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>xFmt?xFmt(ctx.raw):ctx.raw}}},scales:{x:{ticks:{callback:xFmt||(v=>v),color:TICK,font:TFS},grid:{color:GRID}},y:{ticks:{color:TICK,font:TFS},grid:{display:false}}}}; }
 
 function updateAll(){
-  const data=getFiltered();
+  const data = getFiltered();
 
-  // Totais gerais
-  const totR  = data.reduce((a,r)=>a+r.receita,0);
-  const totS  = data.reduce((a,r)=>a+r.sessoes,0);
-  const totT  = data.reduce((a,r)=>a+r.trans,0);
+  const totR = data.reduce((a,r)=>a+r.receita,0);
+  const totS = data.reduce((a,r)=>a+r.sessoes,0);
+  const totT = data.reduce((a,r)=>a+r.trans,0);
 
-  // CRM
-  const dataCRM   = data.filter(r=>isCRM(r.canal));
-  const recCRM    = dataCRM.reduce((a,r)=>a+r.receita,0);
-  const shareCRMv = totR>0 ? recCRM/totR*100 : 0;
+  const dataCRM  = data.filter(r=>isCRM(r.canal));
+  const recCRM   = dataCRM.reduce((a,r)=>a+r.receita,0);
+  const shareCRMv= totR>0 ? recCRM/totR*100 : 0;
 
-  // Insider
-  const dataIns   = data.filter(r=>isInsider(r.canal));
-  const recIns    = dataIns.reduce((a,r)=>a+r.receita,0);
-  const sessIns   = dataIns.reduce((a,r)=>a+r.sessoes,0);
-  const transIns  = dataIns.reduce((a,r)=>a+r.trans,0);
-  const convIns   = sessIns>0 ? transIns/sessIns*100 : 0;
+  const dataIns  = data.filter(r=>isInsider(r.canal));
+  const recIns   = dataIns.reduce((a,r)=>a+r.receita,0);
+  const sessIns  = dataIns.reduce((a,r)=>a+r.sessoes,0);
+  const transIns = dataIns.reduce((a,r)=>a+r.trans,0);
+  const convIns  = sessIns>0 ? transIns/sessIns*100 : 0;
 
-  document.getElementById('k-receita-crm').textContent   = fmtR(recCRM);
-  document.getElementById('k-share-crm').textContent     = shareCRMv.toFixed(2)+'%';
-  document.getElementById('k-sessoes').textContent       = fmt(totS);
-  document.getElementById('k-trans').textContent         = fmt(totT);
-  document.getElementById('k-conv').textContent          = totS>0?(totT/totS*100).toFixed(2)+'%':'—';
-  document.getElementById('k-receita-insider').textContent = fmtR(recIns);
-  document.getElementById('k-conv-insider').textContent  = convIns.toFixed(2)+'%';
-  document.getElementById('k-sess-insider').textContent  = fmt(sessIns);
-  document.getElementById('k-trans-insider').textContent = fmt(transIns);
-  document.getElementById('k-ticket').textContent        = totT>0?fmtR(totR/totT):'—';
+  document.getElementById('k-receita-crm').textContent    = fmtR(recCRM);
+  document.getElementById('k-share-crm').textContent      = shareCRMv.toFixed(2)+'%';
+  document.getElementById('k-sessoes').textContent        = fmt(totS);
+  document.getElementById('k-trans').textContent          = fmt(totT);
+  document.getElementById('k-conv').textContent           = totS>0?(totT/totS*100).toFixed(2)+'%':'—';
+  document.getElementById('k-receita-insider').textContent= fmtR(recIns);
+  document.getElementById('k-conv-insider').textContent   = convIns.toFixed(2)+'%';
+  document.getElementById('k-sess-insider').textContent   = fmt(sessIns);
+  document.getElementById('k-trans-insider').textContent  = fmt(transIns);
+  document.getElementById('k-ticket').textContent         = totT>0?fmtR(totR/totT):'—';
 
-  // Agrupamento por data e canal (CRM vs Outros)
   const byDate={};
   data.forEach(r=>{
-    if(!byDate[r.date])byDate[r.date]={crm:0,outros:0,sesscrm:0,sessoutros:0,transcrm:0,transoutros:0};
+    if(!byDate[r.date]) byDate[r.date]={crm:0,outros:0,sesscrm:0,sessoutros:0,transcrm:0,transoutros:0};
     const d=byDate[r.date];
     if(isCRM(r.canal)){d.crm+=r.receita;d.sesscrm+=r.sessoes;d.transcrm+=r.trans;}
     else{d.outros+=r.receita;d.sessoutros+=r.sessoes;d.transoutros+=r.trans;}
@@ -364,32 +326,27 @@ function updateAll(){
   const tranTotal= dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
   const n=dates.length;
 
-  // Receita diária
   dc('diario'); leg('leg-diario',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:[
     {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:C.crm+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
     {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:C.outros+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
   ]},options:lineOpts(v=>fmtC(v))});
 
-  // Canal donut
   const canalMap={};data.forEach(r=>{const g=isCRM(r.canal)?'CRM':'Outros Canais';canalMap[g]=(canalMap[g]||0)+r.receita;});
   const canais=Object.keys(canalMap).sort((a,b)=>canalMap[b]-canalMap[a]);
   dc('canal'); leg('leg-canal',canais.map((c,i)=>({color:i===0?C.crm:C.outros,label:c})));
   charts['canal']=new Chart(document.getElementById('chart-canal'),{type:'doughnut',data:{labels:canais,datasets:[{data:canais.map(c=>Math.round(canalMap[c])),backgroundColor:canais.map((_,i)=>i===0?C.crm:C.outros),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}}}});
 
-  // PDV donut
   const pdvMap={};data.forEach(r=>{pdvMap[r.pdv]=(pdvMap[r.pdv]||0)+r.sessoes;});
   const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[b]-pdvMap[a]);
   dc('pdv'); leg('leg-pdv',pdvs.map((p,i)=>({color:i===0?C.site:C.app,label:p})));
   charts['pdv']=new Chart(document.getElementById('chart-pdv'),{type:'doughnut',data:{labels:pdvs,datasets:[{data:pdvs.map(p=>Math.round(pdvMap[p])),backgroundColor:pdvs.map((_,i)=>i===0?C.site:C.app),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)+' sessões'}}}}});
 
-  // Top origens
   const origemMap={};data.forEach(r=>{origemMap[r.origem]=(origemMap[r.origem]||0)+r.receita;});
   const origens=Object.keys(origemMap).sort((a,b)=>origemMap[b]-origemMap[a]).slice(0,8);
   dc('origem');
   charts['origem']=new Chart(document.getElementById('chart-origem'),{type:'bar',data:{labels:origens,datasets:[{data:origens.map(o=>Math.round(origemMap[o])),backgroundColor:C.pal,borderWidth:0,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},scales:{x:{ticks:{callback:v=>fmtC(v),color:TICK,font:TF},grid:{color:GRID}},y:{ticks:{color:TICK,font:TF},grid:{display:false}}}}});
 
-  // Evolução linhas
   dc('ev-receita');
   charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[{label:'Receita',data:totV,borderColor:C.total,backgroundColor:C.total+'18',fill:true,tension:0.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>fmtC(v))});
 
@@ -418,7 +375,6 @@ function updateAll(){
     {label:'Outros',data:tranOth2,borderColor:C.outros,backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 
-  // Barras horizontais
   setHbarH('wrap-hbar-receita',n); dc('hbar-receita');
   charts['hbar-receita']=new Chart(document.getElementById('chart-hbar-receita'),{type:'bar',data:{labels:dates,datasets:[{data:totV,backgroundColor:C.receita+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>fmtC(v))});
 
@@ -443,31 +399,28 @@ function loadData(){
   Papa.parse(CSV_URL,{
     download:true, header:true, skipEmptyLines:true,
     complete:function(res){
-      const keys = res.meta.fields || [];
+      const sample = res.data[0] || {};
 
-      // Mostra cabeçalhos reais no debug (útil para diagnóstico)
-      const dbg = document.getElementById('debug-box');
-      if(dbg){ dbg.textContent = 'Colunas detectadas: '+keys.join(' | '); }
-
-      // Mapeamento flexível de colunas
-      const colMap = {
-        pdv:     findCol(keys, ['Ponto de Venda','ponto de venda','pdv']),
-        date:    findCol(keys, ['Data Ajustada','Data ajustada','Data','data']),
-        canal:   findCol(keys, ['Origem Agrupada','Origem agrupada','origem agrupada','Canal']),
-        origem:  findCol(keys, ['Origem Resumida','Origem resumida','origem resumida','Origem / mídia da sessão','origem / midia da sessao']),
-        sessoes: findCol(keys, ['Sessões','Sessoes','sessoes','Sessions']),
-        trans:   findCol(keys, ['Transações','Transacoes','transacoes','Transactions']),
-        receita: findCol(keys, ['Receita','receita','Revenue'])
+      // Detecta colunas pelos nomes reais (com encoding quebrado incluído)
+      const K = {
+        pdv:     findKey(sample, ['Ponto de Venda','Ponto de venda']),
+        date:    findKey(sample, ['Data Ajustada','Data ajustada','Data']),
+        canal:   findKey(sample, ['Origem Agrupada','Origem agrupada']),
+        origem:  findKey(sample, ['Origem Resumida','Origem resumida']),
+        sessoes: findKey(sample, ['Sessões','Sessoes','SessÃµes','Sess\u00f5es','Sess\u00c3\u00b5es']),
+        trans:   findKey(sample, ['Transações','Transacoes','TransaÃ§Ãµes','Transa\u00e7\u00f5es']),
+        receita: findKey(sample, ['Receita','receita'])
       };
 
-      // Loga colunas não encontradas
-      const missing = Object.entries(colMap).filter(([,v])=>!v).map(([k])=>k);
-      if(missing.length && dbg){
-        dbg.style.display='block';
-        dbg.textContent += '\nColunas NÃO encontradas: '+missing.join(', ')+'\nColunas disponíveis: '+keys.join(' | ');
-      }
-
-      rawData = res.data.map(r=>mapRow(r,colMap)).filter(r=>r.date && r.date.length>=8);
+      rawData = res.data.map(r=>({
+        pdv:    String(r[K.pdv]   ||'').trim(),
+        date:   parseDate(r[K.date]),
+        canal:  String(r[K.canal] ||'Outros Canais').trim(),
+        origem: String(r[K.origem]||'').trim(),
+        sessoes:parseNum(r[K.sessoes]),
+        trans:  parseNum(r[K.trans]),
+        receita:parseNum(r[K.receita])
+      })).filter(r=>r.date && r.date.length>=8);
 
       const ultimo = rawData.map(r=>r.date).sort().reverse()[0]||'';
       document.getElementById('status-txt').textContent = fmt(rawData.length)+' linhas · último: '+(ultimo||'—');
