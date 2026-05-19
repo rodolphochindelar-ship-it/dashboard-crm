@@ -820,7 +820,7 @@
           <div style="position:relative;height:200px"><canvas id="chart-cmp-sess"></canvas></div>
         </div>
         <div class="cmp-card">
-          <div class="cmp-card-title">Share CRM (%)</div>
+          <div class="cmp-card-title">Share (%)</div>
           <div class="legend" id="leg-cmp-share"></div>
           <div style="position:relative;height:200px"><canvas id="chart-cmp-share"></canvas></div>
         </div>
@@ -897,6 +897,20 @@
       return { byDate, dates };
     }
 
+    function filterByOrigens(baseData) {
+      if (!window.selectedOrigens || window.selectedOrigens.length === 0) return baseData;
+      const incCrm = window.selectedOrigens.includes('CRM_TOTAL');
+      const incOut = window.selectedOrigens.includes('OUTROS_TOTAL');
+      const spec = new Set(window.selectedOrigens.filter(o => o !== 'CRM_TOTAL' && o !== 'OUTROS_TOTAL'));
+      
+      return baseData.filter(r => {
+        if (incCrm && isCRM(r.canal)) return true;
+        if (incOut && !isCRM(r.canal)) return true;
+        if (spec.has(r.midia)) return true;
+        return false;
+      });
+    }
+
     function updateAll() {
       Chart.register(ChartDataLabels);
       window.selectedOrigens = Array.from(document.querySelectorAll('#ms-list input:checked')).map(cb => cb.value);
@@ -911,7 +925,7 @@
       const cmp = document.getElementById('f-cmp').value;
 
       const dataBase = getFilteredBase(ini, fim, pdv);
-      const data = dataBase;
+      const data = filterByOrigens(dataBase);
 
       const calcKPIs = (dbase, dfilt) => {
         const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
@@ -930,7 +944,7 @@
         const bDates = getPeriodB_Dates(ini, fim, cmp);
         if (bDates) {
           const dataBaseB = getFilteredBase(bDates.bIni, bDates.bFim, pdv);
-          dataB = dataBaseB;
+          dataB = filterByOrigens(dataBaseB);
           kpiB = calcKPIs(dataBaseB, dataB);
         }
       }
@@ -1107,17 +1121,17 @@
         return true;
       });
     }
-    function periodKPIs(data) {
-      const totR = data.reduce((a, r) => a + r.receita, 0);
-      const totS = data.reduce((a, r) => a + r.sessoes, 0);
-      const totT = data.reduce((a, r) => a + r.trans, 0);
-      const recCRM = data.filter(r => isCRM(r.canal)).reduce((a, r) => a + r.receita, 0);
-      return { receita: totR, sessoes: totS, trans: totT, conv: totS > 0 ? totT / totS * 100 : 0, shareCRM: totR > 0 ? recCRM / totR * 100 : 0, ticket: totT > 0 ? totR / totT : 0 };
+    function periodKPIs(dfilt, dbase) {
+      const totR_base = dbase.reduce((a, r) => a + r.receita, 0);
+      const totR = dfilt.reduce((a, r) => a + r.receita, 0);
+      const totS = dfilt.reduce((a, r) => a + r.sessoes, 0);
+      const totT = dfilt.reduce((a, r) => a + r.trans, 0);
+      return { receita: totR, sessoes: totS, trans: totT, conv: totS > 0 ? totT / totS * 100 : 0, share: totR_base > 0 ? totR / totR_base * 100 : 0, ticket: totT > 0 ? totR / totT : 0 };
     }
     function renderCmpKPIs(kA, kB) {
       const fields = [
         { key: 'receita', label: 'Receita total', fmt: fmtR },
-        { key: 'shareCRM', label: 'Share CRM', fmt: v => v.toFixed(1) + '%' },
+        { key: 'share', label: 'Share %', fmt: v => v.toFixed(1) + '%' },
         { key: 'sessoes', label: 'Sessões', fmt: fmt },
         { key: 'trans', label: 'Transações', fmt: fmt },
         { key: 'conv', label: 'Conversão', fmt: v => v.toFixed(2) + '%' }
@@ -1128,14 +1142,21 @@
         return `<div class="cmp-kpi"><div class="cmp-kpi-label">${f.label}</div><div class="cmp-row"><span class="cmp-val a">${f.fmt(va)}</span><span class="cmp-val b">${f.fmt(vb)}</span>${dHtml}</div></div>`;
       }).join('');
     }
-    function buildCmpSeries(data) {
+    function buildCmpSeries(data, dataBase) {
       const { byDate, dates } = buildByDate(data);
+      const byDateBase = buildByDate(dataBase).byDate;
       return {
         dates,
         receita: dates.map(d => Math.round(byDate[d].crm + byDate[d].outros)),
         conv: dates.map(d => { const x = byDate[d]; const s = x.sesscrm + x.sessoutros; return s > 0 ? +((x.transcrm + x.transoutros) / s * 100).toFixed(2) : 0 }),
         sess: dates.map(d => Math.round(byDate[d].sesscrm + byDate[d].sessoutros)),
-        share: dates.map(d => { const x = byDate[d]; const t = x.crm + x.outros; return t > 0 ? +(x.crm / t * 100).toFixed(1) : 0 })
+        share: dates.map(d => { 
+          const x = byDate[d]; 
+          const xb = byDateBase[d] || {crm:0, outros:0};
+          const t = x.crm + x.outros;
+          const tb = xb.crm + xb.outros;
+          return tb > 0 ? +(t / tb * 100).toFixed(1) : 0;
+        })
       };
     }
     function cmpOpts(yFmt, extra) {
@@ -1176,9 +1197,12 @@
       const lA = fmtLabel(aIni, aFim), lB = fmtLabel(bIni, bFim);
       document.getElementById('cmp-label-a').textContent = lA;
       document.getElementById('cmp-label-b').textContent = lB;
-      const dA = getPeriodData(aIni, aFim, pdv), dB = getPeriodData(bIni, bFim, pdv);
-      renderCmpKPIs(periodKPIs(dA), periodKPIs(dB));
-      renderCmpCharts(buildCmpSeries(dA), buildCmpSeries(dB), lA, lB);
+      const dA_base = getPeriodData(aIni, aFim, pdv);
+      const dB_base = getPeriodData(bIni, bFim, pdv);
+      const dA = filterByOrigens(dA_base);
+      const dB = filterByOrigens(dB_base);
+      renderCmpKPIs(periodKPIs(dA, dA_base), periodKPIs(dB, dB_base));
+      renderCmpCharts(buildCmpSeries(dA, dA_base), buildCmpSeries(dB, dB_base), lA, lB);
     }
 
     function applyPreset(preset) {
