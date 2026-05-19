@@ -31,6 +31,10 @@
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.6}
   .kpi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
   .kpi-value{font-size:24px;font-weight:300;color:var(--text);font-family:var(--mono);letter-spacing:-1px}
+  .kpi-delta{font-size:11px;font-family:var(--mono);padding:2px 6px;border-radius:4px;margin-left:8px;vertical-align:middle;display:inline-block}
+  .kpi-delta.pos{background:rgba(31,209,150,.15);color:#1fd196}
+  .kpi-delta.neg{background:rgba(240,112,64,.15);color:#f07040}
+  .kpi-delta.neu{background:rgba(255,255,255,.07);color:var(--text2)}
   .section-title{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin:2rem 0 1rem;display:flex;align-items:center;gap:10px}
   .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
   .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:12px}
@@ -92,6 +96,9 @@
     <div class="filter-group"><label>Canal agrupado</label>
       <select id="f-canal"><option value="">Todos</option><option value="CRM">CRM</option><option value="Outros Canais">Outros Canais</option></select>
     </div>
+    <div class="filter-group"><label>Comparar com</label>
+      <select id="f-cmp"><option value="none">Sem comparativo</option><option value="mom">MoM — Mês anterior</option><option value="yoy">YoY — Ano anterior</option></select>
+    </div>
     <div class="filter-sep"></div>
     <div class="filter-group"><label>Data início</label><input type="date" id="f-inicio" value="2026-01-01"/></div>
     <div class="filter-group"><label>Data fim</label><input type="date" id="f-fim" value="2026-05-17"/></div>
@@ -100,8 +107,8 @@
   <!-- KPIs linha 1 -->
   <p class="section-title">Visão geral — CRM</p>
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Receita CRM</div><div class="kpi-value" id="k-receita-crm">—</div></div>
-    <div class="kpi"><div class="kpi-label">Share CRM</div><div class="kpi-value" id="k-share-crm">—</div></div>
+    <div class="kpi"><div class="kpi-label" id="lbl-kpi-rec">Receita CRM</div><div class="kpi-value" id="k-receita-crm">—</div></div>
+    <div class="kpi"><div class="kpi-label" id="lbl-kpi-share">Share CRM</div><div class="kpi-value" id="k-share-crm">—</div></div>
     <div class="kpi"><div class="kpi-label">Sessões</div><div class="kpi-value" id="k-sessoes">—</div></div>
     <div class="kpi"><div class="kpi-label">Transações</div><div class="kpi-value" id="k-trans">—</div></div>
     <div class="kpi"><div class="kpi-label">Conversão %</div><div class="kpi-value" id="k-conv">—</div></div>
@@ -118,7 +125,7 @@
 
   <!-- Visão geral -->
   <p class="section-title">Visão geral</p>
-  <div class="card"><h3>Receita diária</h3>
+  <div class="card"><h3>Receita diária (Área)</h3>
     <div class="legend" id="leg-diario"></div>
     <div style="position:relative;width:100%;height:220px"><canvas id="chart-diario"></canvas></div>
   </div>
@@ -137,42 +144,30 @@
   </div>
 
   <!-- Evolução diária -->
-  <p class="section-title">Evolução diária</p>
-  <div class="card"><h3>Receita diária total</h3>
+  <p class="section-title">Evolução diária (Linhas)</p>
+  <div class="card"><h3>Receita por dia (R$)</h3>
+    <div class="legend" id="leg-ev-receita"></div>
     <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-receita"></canvas></div>
   </div>
-  <div class="card"><h3>Taxa de conversão diária (%)</h3>
-    <div class="legend" id="leg-ev-conv"></div>
-    <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-conv"></canvas></div>
-  </div>
-  <div class="card"><h3>Share de receita por canal — CRM vs Outros (%)</h3>
-    <div class="legend" id="leg-ev-share"></div>
-    <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-share"></canvas></div>
+  <div class="grid-2">
+    <div class="card"><h3>Taxa de conversão por dia (%)</h3>
+      <div class="legend" id="leg-ev-conv"></div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-conv"></canvas></div>
+    </div>
+    <div class="card"><h3 id="lbl-chart-share">Share de receita por dia (%)</h3>
+      <div class="legend" id="leg-ev-share"></div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-ev-share"></canvas></div>
+    </div>
   </div>
   <div class="grid-2">
-    <div class="card"><h3>Sessões diárias</h3>
+    <div class="card"><h3>Sessões por dia</h3>
       <div class="legend" id="leg-ev-sess"></div>
       <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-sess"></canvas></div>
     </div>
-    <div class="card"><h3>Transações diárias</h3>
+    <div class="card"><h3>Transações por dia</h3>
       <div class="legend" id="leg-ev-trans"></div>
       <div style="position:relative;width:100%;height:200px"><canvas id="chart-ev-trans"></canvas></div>
     </div>
-  </div>
-  <div class="card"><h3>Receita por dia (R$)</h3>
-    <div style="position:relative;width:100%;height:220px"><canvas id="chart-hbar-receita"></canvas></div>
-  </div>
-  <div class="card"><h3>Taxa de conversão por dia (%)</h3>
-    <div style="position:relative;width:100%;height:220px"><canvas id="chart-hbar-conv"></canvas></div>
-  </div>
-  <div class="card"><h3>Share CRM por dia (%)</h3>
-    <div style="position:relative;width:100%;height:220px"><canvas id="chart-hbar-share"></canvas></div>
-  </div>
-  <div class="card"><h3>Sessões por dia</h3>
-    <div style="position:relative;width:100%" id="wrap-hbar-sess"><canvas id="chart-hbar-sess"></canvas></div>
-  </div>
-  <div class="card"><h3>Transações por dia</h3>
-    <div style="position:relative;width:100%" id="wrap-hbar-trans"><canvas id="chart-hbar-trans"></canvas></div>
   </div>
 
   <!-- Comparativo de períodos -->
@@ -249,27 +244,37 @@ function parseNum(s){if(!s&&s!==0)return 0;s=String(s).trim().replace(/\s/g,'');
 function parseDate(d){if(!d)return null;const s=String(d).trim();if(s.includes('/')){const p=s.split('/');if(p.length===3){if(p[2].length===4)return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;return`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`}}if(/^\d{8}$/.test(s))return`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;return s}
 function isCRM(canal){return String(canal).toUpperCase().startsWith('CRM')}
 function isInsider(r){return String(r.origem).toLowerCase().startsWith('insider /')}
+function delta(a,b){if(b===0)return null;return(a-b)/Math.abs(b)*100}
 
-function getFiltered(){
-  const pdv=document.getElementById('f-pdv').value;
-  const canal=document.getElementById('f-canal').value;
-  const ini=document.getElementById('f-inicio').value;
-  const fim=document.getElementById('f-fim').value;
+function getFilteredBase(ini,fim,pdv){
   return rawData.filter(r=>{
     if(pdv&&r.pdv!==pdv)return false;
-    if(canal==='CRM'&&!isCRM(r.canal))return false;
-    if(canal==='Outros Canais'&&isCRM(r.canal))return false;
     if(ini&&r.date<ini)return false;
     if(fim&&r.date>fim)return false;
     return true;
   });
 }
 
+function getPeriodB_Dates(ini,fim,preset){
+  if(!preset||preset==='none')return null;
+  const d1=new Date(ini),d2=new Date(fim);
+  let bIni,bFim;
+  if(preset==='yoy'){
+    const y1=new Date(d1);y1.setFullYear(y1.getFullYear()-1);
+    const y2=new Date(d2);y2.setFullYear(y2.getFullYear()-1);
+    bIni=y1.toISOString().slice(0,10);bFim=y2.toISOString().slice(0,10);
+  }else if(preset==='mom'){
+    const diff=d2-d1;
+    const b2=new Date(d1.getTime()-864e5);
+    const b1=new Date(b2.getTime()-diff);
+    bIni=b1.toISOString().slice(0,10);bFim=b2.toISOString().slice(0,10);
+  }
+  return{bIni,bFim};
+}
+
 function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function leg(id,items){const el=document.getElementById(id);if(!el)return;el.innerHTML=items.map(i=>`<span><span class="legend-dot" style="background:${i.color}"></span>${i.label}</span>`).join('')}
-function lineOpts(yFmt){return{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{ticks:{callback:yFmt||(v=>v),color:TICK,font:TF},grid:{color:GRID}}}}}
-function setHbarH(wId,n){const w=document.getElementById(wId);if(w)w.style.height=Math.max(200,n*22+40)+'px'}
-function hbarOpts(xFmt){return{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>xFmt?xFmt(ctx.raw):ctx.raw}}},scales:{x:{ticks:{callback:xFmt||(v=>v),color:TICK,font:TFS},grid:{color:GRID}},y:{ticks:{color:TICK,font:TFS},grid:{display:false}}}}}
+function lineOpts(yFmt){return{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${yFmt?yFmt(ctx.raw):ctx.raw}`}}},scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{ticks:{callback:yFmt||(v=>v),color:TICK,font:TF},grid:{color:GRID}}}}}
 
 function buildByDate(data){
   const byDate={};
@@ -284,46 +289,88 @@ function buildByDate(data){
 }
 
 function updateAll(){
-  const data=getFiltered();
-  const totR=data.reduce((a,r)=>a+r.receita,0);
-  const totS=data.reduce((a,r)=>a+r.sessoes,0);
-  const totT=data.reduce((a,r)=>a+r.trans,0);
-  const dataCRM=data.filter(r=>isCRM(r.canal));
-  const recCRM=dataCRM.reduce((a,r)=>a+r.receita,0);
-  const shareCRMv=totR>0?recCRM/totR*100:0;
-  const dataIns=data.filter(r=>isInsider(r));
-  const recIns=dataIns.reduce((a,r)=>a+r.receita,0);
-  const sessIns=dataIns.reduce((a,r)=>a+r.sessoes,0);
-  const transIns=dataIns.reduce((a,r)=>a+r.trans,0);
-  const convIns=sessIns>0?transIns/sessIns*100:0;
+  const pdv=document.getElementById('f-pdv').value;
+  const canal=document.getElementById('f-canal').value;
+  const ini=document.getElementById('f-inicio').value;
+  const fim=document.getElementById('f-fim').value;
+  const cmp=document.getElementById('f-cmp').value;
 
-  document.getElementById('k-receita-crm').textContent=fmtR(recCRM);
-  document.getElementById('k-share-crm').textContent=shareCRMv.toFixed(2)+'%';
-  document.getElementById('k-sessoes').textContent=fmt(totS);
-  document.getElementById('k-trans').textContent=fmt(totT);
-  document.getElementById('k-conv').textContent=totS>0?(totT/totS*100).toFixed(2)+'%':'—';
-  document.getElementById('k-receita-insider').textContent=fmtR(recIns);
-  document.getElementById('k-conv-insider').textContent=convIns.toFixed(2)+'%';
-  document.getElementById('k-sess-insider').textContent=fmt(sessIns);
-  document.getElementById('k-trans-insider').textContent=fmt(transIns);
-  document.getElementById('k-ticket').textContent=totT>0?fmtR(totR/totT):'—';
+  const dataBase=getFilteredBase(ini,fim,pdv);
+  const data=dataBase.filter(r=>{
+    if(canal==='CRM'&&!isCRM(r.canal))return false;
+    if(canal==='Outros Canais'&&isCRM(r.canal))return false;
+    return true;
+  });
 
+  const calcKPIs=(dbase,dfilt)=>{
+    const totR_base=dbase.reduce((a,r)=>a+r.receita,0);
+    const rec=dfilt.reduce((a,r)=>a+r.receita,0);
+    const sess=dfilt.reduce((a,r)=>a+r.sessoes,0);
+    const trans=dfilt.reduce((a,r)=>a+r.trans,0);
+    const conv=sess>0?trans/sess*100:0;
+    const share=totR_base>0?rec/totR_base*100:0;
+    const tkt=trans>0?rec/trans:0;
+    return{rec,sess,trans,conv,share,tkt};
+  };
+
+  const kpiA=calcKPIs(dataBase,data);
+  let kpiB=null,dataB=null;
+  if(cmp!=='none'){
+    const bDates=getPeriodB_Dates(ini,fim,cmp);
+    if(bDates){
+      const dataBaseB=getFilteredBase(bDates.bIni,bDates.bFim,pdv);
+      dataB=dataBaseB.filter(r=>{
+        if(canal==='CRM'&&!isCRM(r.canal))return false;
+        if(canal==='Outros Canais'&&isCRM(r.canal))return false;
+        return true;
+      });
+      kpiB=calcKPIs(dataBaseB,dataB);
+    }
+  }
+
+  const setKpi=(id,val,fmtFn,key,kb)=>{
+    const el=document.getElementById(id);if(!el)return;
+    let html=fmtFn(val);
+    if(kb&&kb[key]!==undefined){
+      const d=delta(val,kb[key]);
+      if(d!==null){
+        const cls=d>0?'pos':d<0?'neg':'neu';
+        html+=`<span class="kpi-delta ${cls}">${d>0?'+':''}${d.toFixed(1)}%</span>`;
+      }
+    }
+    el.innerHTML=html;
+  };
+
+  document.getElementById('lbl-kpi-rec').textContent=canal==='Outros Canais'?'Receita Outros':'Receita CRM';
+  document.getElementById('lbl-kpi-share').textContent=canal==='Outros Canais'?'Share Outros':'Share CRM';
+
+  setKpi('k-receita-crm',kpiA.rec,fmtR,'rec',kpiB);
+  setKpi('k-share-crm',kpiA.share,v=>v.toFixed(2)+'%','share',kpiB);
+  setKpi('k-sessoes',kpiA.sess,fmt,'sess',kpiB);
+  setKpi('k-trans',kpiA.trans,fmt,'trans',kpiB);
+  setKpi('k-conv',kpiA.conv,v=>v>0?v.toFixed(2)+'%':'—','conv',kpiB);
+
+  const calcInsider=(dfilt)=>{
+    const dIns=dfilt.filter(r=>isInsider(r));
+    const rec=dIns.reduce((a,r)=>a+r.receita,0);
+    const sess=dIns.reduce((a,r)=>a+r.sessoes,0);
+    const trans=dIns.reduce((a,r)=>a+r.trans,0);
+    const conv=sess>0?trans/sess*100:0;
+    return{rec,sess,trans,conv};
+  };
+  const insA=calcInsider(data);
+  const insB=dataB?calcInsider(dataB):null;
+  setKpi('k-receita-insider',insA.rec,fmtR,'rec',insB);
+  setKpi('k-conv-insider',insA.conv,v=>v.toFixed(2)+'%','conv',insB);
+  setKpi('k-sess-insider',insA.sess,fmt,'sess',insB);
+  setKpi('k-trans-insider',insA.trans,fmt,'trans',insB);
+  setKpi('k-ticket',kpiA.tkt,v=>v>0?fmtR(v):'—','tkt',kpiB);
+
+  // --- Gráficos Visão Geral ---
   const{byDate,dates}=buildByDate(data);
   const crmV=dates.map(d=>Math.round(byDate[d].crm));
   const outrosV=dates.map(d=>Math.round(byDate[d].outros));
   const totV=dates.map(d=>Math.round(byDate[d].crm+byDate[d].outros));
-  const convTotal=dates.map(d=>{const x=byDate[d];const s=x.sesscrm+x.sessoutros;return s>0?+((x.transcrm+x.transoutros)/s*100).toFixed(2):0});
-  const convCRM2=dates.map(d=>{const x=byDate[d];return x.sesscrm>0?+(x.transcrm/x.sesscrm*100).toFixed(2):0});
-  const convOut2=dates.map(d=>{const x=byDate[d];return x.sessoutros>0?+(x.transoutros/x.sessoutros*100).toFixed(2):0});
-  const shrCRM=dates.map(d=>{const x=byDate[d];const t=x.crm+x.outros;return t>0?+(x.crm/t*100).toFixed(1):0});
-  const shrOth=dates.map((_,i)=>+(100-shrCRM[i]).toFixed(1));
-  const sessCRM2=dates.map(d=>Math.round(byDate[d].sesscrm));
-  const sessOth2=dates.map(d=>Math.round(byDate[d].sessoutros));
-  const sessTotal=dates.map(d=>Math.round(byDate[d].sesscrm+byDate[d].sessoutros));
-  const tranCRM2=dates.map(d=>Math.round(byDate[d].transcrm));
-  const tranOth2=dates.map(d=>Math.round(byDate[d].transoutros));
-  const tranTotal=dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
-  const n=dates.length;
 
   dc('diario');leg('leg-diario',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
   charts['diario']=new Chart(document.getElementById('chart-diario'),{type:'line',data:{labels:dates,datasets:[
@@ -346,50 +393,52 @@ function updateAll(){
   dc('origem');
   charts['origem']=new Chart(document.getElementById('chart-origem'),{type:'bar',data:{labels:origens,datasets:[{data:origens.map(o=>Math.round(origemMap[o])),backgroundColor:C.pal,borderWidth:0,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},scales:{x:{ticks:{callback:v=>fmtC(v),color:TICK,font:TF},grid:{color:GRID}},y:{ticks:{color:TICK,font:TF},grid:{display:false}}}}});
 
-  dc('ev-receita');
-  charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[{label:'Receita',data:totV,borderColor:C.total,backgroundColor:C.total+'18',fill:true,tension:.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>fmtC(v))});
+  // --- Gráficos Evolução Diária (Linhas) ---
+  const convTotal=dates.map(d=>{const x=byDate[d];const s=x.sesscrm+x.sessoutros;return s>0?+((x.transcrm+x.transoutros)/s*100).toFixed(2):0});
+  const convCRM2=dates.map(d=>{const x=byDate[d];return x.sesscrm>0?+(x.transcrm/x.sesscrm*100).toFixed(2):0});
+  const convOut2=dates.map(d=>{const x=byDate[d];return x.sessoutros>0?+(x.transoutros/x.sessoutros*100).toFixed(2):0});
+  const shrCRM=dates.map(d=>{const x=byDate[d];const t=x.crm+x.outros;return t>0?+(x.crm/t*100).toFixed(1):0});
+  const shrOth=dates.map((_,i)=>+(100-shrCRM[i]).toFixed(1));
+  const sessCRM2=dates.map(d=>Math.round(byDate[d].sesscrm));
+  const sessOth2=dates.map(d=>Math.round(byDate[d].sessoutros));
+  const sessTotal=dates.map(d=>Math.round(byDate[d].sesscrm+byDate[d].sessoutros));
+  const tranCRM2=dates.map(d=>Math.round(byDate[d].transcrm));
+  const tranOth2=dates.map(d=>Math.round(byDate[d].transoutros));
+  const tranTotal=dates.map(d=>Math.round(byDate[d].transcrm+byDate[d].transoutros));
+
+  dc('ev-receita');leg('leg-ev-receita',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
+  charts['ev-receita']=new Chart(document.getElementById('chart-ev-receita'),{type:'line',data:{labels:dates,datasets:[
+    {label:'Total',data:totV,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'CRM',data:crmV,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
+    {label:'Outros',data:outrosV,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
+  ]},options:lineOpts(v=>fmtC(v))});
 
   dc('ev-conv');leg('leg-ev-conv',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
   charts['ev-conv']=new Chart(document.getElementById('chart-ev-conv'),{type:'line',data:{labels:dates,datasets:[
     {label:'Total',data:convTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
-    {label:'CRM',data:convCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'CRM',data:convCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
     {label:'Outros',data:convOut2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>v.toFixed(1)+'%')});
 
-  dc('ev-share');leg('leg-ev-share',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros canais'}]);
-  charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'bar',data:{labels:dates,datasets:[
-    {label:'CRM',data:shrCRM,backgroundColor:C.crm,borderWidth:0,stack:'s'},
-    {label:'Outros',data:shrOth,backgroundColor:C.outros,borderWidth:0,stack:'s'}
-  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw.toFixed(1)+'%'}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{stacked:true,min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
+  dc('ev-share');leg('leg-ev-share',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
+  charts['ev-share']=new Chart(document.getElementById('chart-ev-share'),{type:'line',data:{labels:dates,datasets:[
+    {label:'CRM',data:shrCRM,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'Outros',data:shrOth,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2,borderDash:[5,3]}
+  ]},options:{...lineOpts(v=>v.toFixed(1)+'%'),scales:{x:{ticks:{maxTicksLimit:10,color:TICK,font:TF},grid:{display:false}},y:{min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TF},grid:{color:GRID}}}}});
 
-  dc('ev-sess');leg('leg-ev-sess',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
+  dc('ev-sess');leg('leg-ev-sess',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
   charts['ev-sess']=new Chart(document.getElementById('chart-ev-sess'),{type:'line',data:{labels:dates,datasets:[
-    {label:'CRM',data:sessCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'Total',data:sessTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'CRM',data:sessCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
     {label:'Outros',data:sessOth2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 
-  dc('ev-trans');leg('leg-ev-trans',[{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
+  dc('ev-trans');leg('leg-ev-trans',[{color:C.total,label:'Total'},{color:C.crm,label:'CRM'},{color:C.outros,label:'Outros'}]);
   charts['ev-trans']=new Chart(document.getElementById('chart-ev-trans'),{type:'line',data:{labels:dates,datasets:[
-    {label:'CRM',data:tranCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'Total',data:tranTotal,borderColor:C.total,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2},
+    {label:'CRM',data:tranCRM2,borderColor:C.crm,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5},
     {label:'Outros',data:tranOth2,borderColor:C.outros,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
   ]},options:lineOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
-
-  dc('hbar-receita');
-  charts['hbar-receita']=new Chart(document.getElementById('chart-hbar-receita'),{type:'line',data:{labels:dates,datasets:[{data:totV,borderColor:C.receita,backgroundColor:C.receita+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>fmtC(v))});
-
-  dc('hbar-conv');
-  charts['hbar-conv']=new Chart(document.getElementById('chart-hbar-conv'),{type:'line',data:{labels:dates,datasets:[{data:convTotal,borderColor:C.conv,backgroundColor:C.conv+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2}]},options:lineOpts(v=>v.toFixed(2)+'%')});
-
-  dc('hbar-share');
-  charts['hbar-share']=new Chart(document.getElementById('chart-hbar-share'),{type:'line',
-    data:{labels:dates,datasets:[{data:shrCRM,borderColor:C.share,backgroundColor:C.share+'22',fill:true,tension:.3,pointRadius:0,borderWidth:2}]},
-    options:{...lineOpts(v=>v.toFixed(1)+'%'),scales:{x:{ticks:{maxTicksLimit:12,color:TICK,font:TFS},grid:{display:false}},y:{min:0,max:100,ticks:{callback:v=>v+'%',color:TICK,font:TFS},grid:{color:GRID}}}}});
-
-  setHbarH('wrap-hbar-sess',n);dc('hbar-sess');
-  charts['hbar-sess']=new Chart(document.getElementById('chart-hbar-sess'),{type:'bar',data:{labels:dates,datasets:[{data:sessTotal,backgroundColor:C.sess+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
-
-  setHbarH('wrap-hbar-trans',n);dc('hbar-trans');
-  charts['hbar-trans']=new Chart(document.getElementById('chart-hbar-trans'),{type:'bar',data:{labels:dates,datasets:[{data:tranTotal,backgroundColor:C.trans+'bb',borderRadius:3,borderWidth:0}]},options:hbarOpts(v=>Intl.NumberFormat('pt-BR',{notation:'compact'}).format(v))});
 }
 
 /* ── Comparativo ── */
@@ -408,7 +457,6 @@ function periodKPIs(data){
   const recCRM=data.filter(r=>isCRM(r.canal)).reduce((a,r)=>a+r.receita,0);
   return{receita:totR,sessoes:totS,trans:totT,conv:totS>0?totT/totS*100:0,shareCRM:totR>0?recCRM/totR*100:0,ticket:totT>0?totR/totT:0};
 }
-function delta(a,b){if(b===0)return null;return(a-b)/Math.abs(b)*100}
 function renderCmpKPIs(kA,kB){
   const fields=[
     {key:'receita',label:'Receita total',fmt:fmtR},
@@ -503,13 +551,24 @@ function applyPreset(preset){
 }
 
 /* ── Eventos ── */
-['f-pdv','f-canal','f-inicio','f-fim'].forEach(id=>{
+['f-pdv','f-canal','f-cmp'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', updateAll);
+});
+
+['f-inicio','f-fim'].forEach(id=>{
   document.getElementById(id).addEventListener('change',()=>{
+    document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
+    document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+    const activeBtn = document.querySelector('.cmp-btn.active');
+    if(activeBtn && activeBtn.dataset.preset !== 'custom'){
+      applyPreset(activeBtn.dataset.preset);
+    } else {
+      updateComparativo();
+    }
     updateAll();
-    const active=document.querySelector('.cmp-btn.active');
-    if(active&&active.dataset.preset!=='custom')applyPreset(active.dataset.preset);
   });
 });
+
 ['cmp-a-ini','cmp-a-fim','cmp-b-ini','cmp-b-fim','cmp-pdv'].forEach(id=>{
   document.getElementById(id).addEventListener('change',updateComparativo);
 });
@@ -547,6 +606,11 @@ function loadData(){
       })).filter(r=>r.date&&r.date.length>=8);
       const ultimo=rawData.map(r=>r.date).sort().reverse()[0]||'';
       document.getElementById('status-txt').textContent=fmt(rawData.length)+' linhas · último: '+(ultimo||'—');
+      
+      // Initialize comparativo dates
+      document.getElementById('cmp-a-ini').value = document.getElementById('f-inicio').value;
+      document.getElementById('cmp-a-fim').value = document.getElementById('f-fim').value;
+
       updateAll();
       updateComparativo();
     },
